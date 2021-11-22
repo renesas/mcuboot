@@ -39,8 +39,7 @@ extern "C" {
 #endif
 
 #define BOOT_ENC_KEY_ALIGN_SIZE \
-    ((((BOOT_ENC_KEY_SIZE - 1) / BOOT_MAX_ALIGN) + 1) * BOOT_MAX_ALIGN)
-
+	((((BOOT_ENC_KEY_SIZE - 1) / BOOT_MAX_ALIGN) + 1) * BOOT_MAX_ALIGN) /* fixme: */
 
 #define TLV_ENC_RSA_SZ    256
 #define TLV_ENC_KW_SZ     BOOT_ENC_KEY_SIZE + 8

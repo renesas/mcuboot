@@ -157,7 +157,7 @@ boot_magic_off(const struct flash_area *fap)
 static inline uint32_t
 boot_image_ok_off(const struct flash_area *fap)
 {
-    return (boot_magic_off(fap) - BOOT_MAX_ALIGN) & ~(BOOT_MAX_ALIGN - 1);
+    return boot_magic_off(fap) - BOOT_MAX_ALIGN;
 }
 
 static inline uint32_t
