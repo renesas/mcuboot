@@ -33,7 +33,7 @@
 BOOT_LOG_MODULE_DECLARE(mcuboot);
 
 #if defined(MCUBOOT_SIGN_EC256) || defined(MCUBOOT_SIGN_EC384)
-
+#if !defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)
 #include "bootutil_priv.h"
 #include "bootutil/fault_injection_hardening.h"
 #include "bootutil/crypto/ecdsa.h"
@@ -99,4 +99,5 @@ bootutil_verify_sig(uint8_t *hash, uint32_t hlen, uint8_t *sig, size_t slen,
 }
 #endif /* MCUBOOT_BUILTIN_KEY */
 
+#endif /* !MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK */
 #endif /* MCUBOOT_SIGN_EC256 || MCUBOOT_SIGN_EC384 */
