@@ -537,12 +537,12 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
         return -3;
     }
 #if defined(MCUBOOT_SIGN_EC384)
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1 ||
+    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1||
       memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
         return -4;
     }
 #else
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1 ||
+    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1||
       memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
         return -4;
     }
@@ -635,7 +635,7 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
 #endif /* CY_MBEDTLS_HW_ACCELERATION */
 
 static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
-                                                  uint8_t **cp, uint8_t *end)
+                                                  uint8_t **cp,uint8_t *end)
 {
     int rc;
 #ifdef CY_MBEDTLS_HW_ACCELERATION
