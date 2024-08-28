@@ -61,11 +61,16 @@
 
 /*TODO: remove this after cypress port mbedtls to abstract crypto api */
  #if defined(MCUBOOT_USE_CC310) || defined(MCUBOOT_USE_MBED_TLS)
-  #define NUM_ECC_BYTES                          (256 / 8)
+  #if defined(MCUBOOT_SIGN_EC384)
+   #define NUM_ECC_BYTES                         (384 / 8)
+  #else
+   #define NUM_ECC_BYTES                         (256 / 8)
+  #endif
  #endif
 
 /* Universal defines */
  #define BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE    (32)
+ #define BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE    (48)
 
  #include "mbedtls/oid.h"
  #include "mbedtls/asn1.h"
@@ -82,8 +87,12 @@ extern "C" {
 /*
  * Declaring these like this adds NULL termination.
  */
-static const uint8_t ec_pubkey_oid[]    = MBEDTLS_OID_EC_ALG_UNRESTRICTED;
+static const uint8_t ec_pubkey_oid[] = MBEDTLS_OID_EC_ALG_UNRESTRICTED;
+  #if defined(MCUBOOT_SIGN_EC384)
+static const uint8_t ec_secp384r1_oid[] = MBEDTLS_OID_EC_GRP_SECP384R1;
+  #else
 static const uint8_t ec_secp256r1_oid[] = MBEDTLS_OID_EC_GRP_SECP256R1;
+  #endif
 
 /*
  * Parse a public key. Helper function.
@@ -115,11 +124,20 @@ static int bootutil_import_key (uint8_t ** cp, uint8_t * end)
     }
 
     /* namedCurve (RFC5480) */
+  #if defined(MCUBOOT_SIGN_EC384)
+    if ((param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1) ||
+        memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1))
+    {
+        return -4;
+    }
+
+  #else
     if ((param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1) ||
         memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1))
     {
         return -4;
     }
+  #endif
 
     /* ECPoint (RFC5480) */
     if (mbedtls_asn1_get_bitstring_null(cp, end, &len))
@@ -660,7 +678,11 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     (void) hash;
     (void) hash_len;
 
+   #if defined(MCUBOOT_SIGN_EC384)
+    rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP384R1);
+   #else
     rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP256R1);
+   #endif
     if (rc)
     {
         return -1;
@@ -678,7 +700,11 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
         return -1;
     }
 
+   #if defined(MCUBOOT_SIGN_EC384)
+    rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE, sig, sig_len);
+   #else
     rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE, sig, sig_len);
+   #endif
     if (rc)
     {
         return -1;
