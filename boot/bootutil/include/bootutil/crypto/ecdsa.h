@@ -18,72 +18,70 @@
  */
 
 #ifndef __BOOTUTIL_CRYPTO_ECDSA_H_
- #define __BOOTUTIL_CRYPTO_ECDSA_H_
+#define __BOOTUTIL_CRYPTO_ECDSA_H_
 
- #include <stdint.h>
- #include "mcuboot_config/mcuboot_config.h"
+#include <stdint.h>
+#include "mcuboot_config/mcuboot_config.h"
 
- #if defined(MCUBOOT_USE_PSA_CRYPTO) || defined(MCUBOOT_USE_MBED_TLS)
-  #define MCUBOOT_USE_PSA_OR_MBED_TLS
- #endif                                /* MCUBOOT_USE_PSA_CRYPTO || MCUBOOT_USE_MBED_TLS */
+#if defined(MCUBOOT_USE_PSA_CRYPTO) || defined(MCUBOOT_USE_MBED_TLS)
+#define MCUBOOT_USE_PSA_OR_MBED_TLS
+#endif                                /* MCUBOOT_USE_PSA_CRYPTO || MCUBOOT_USE_MBED_TLS */
 
 // #if defined(MCUBOOT_SIGN_EC384) && \
 //     !defined(MCUBOOT_USE_PSA_CRYPTO)
 // #error "P384 requires PSA_CRYPTO to be defined"
 // #endif
 
- #if (defined(MCUBOOT_USE_TINYCRYPT) +     \
+#if (defined(MCUBOOT_USE_TINYCRYPT) +     \
     defined(MCUBOOT_USE_CC310) +           \
     defined(MCUBOOT_USE_PSA_OR_MBED_TLS) + \
     defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)) != 1
-  #error "One crypto backend must be defined: either CC310/TINYCRYPT/MBED_TLS/PSA_CRYPTO/User defined implementation"
- #endif
+   #error "One crypto backend must be defined: either CC310/TINYCRYPT/MBED_TLS/PSA_CRYPTO/User defined implementation"
+#endif
 
- #if defined(MCUBOOT_USE_TINYCRYPT)
-  #include <tinycrypt/ecc_dsa.h>
-  #include <tinycrypt/constants.h>
- #endif                                /* MCUBOOT_USE_TINYCRYPT */
+#if defined(MCUBOOT_USE_TINYCRYPT)
+    #include <tinycrypt/ecc_dsa.h>
+    #include <tinycrypt/constants.h>
+#endif                                /* MCUBOOT_USE_TINYCRYPT */
 
- #if defined(MCUBOOT_USE_CC310)
-  #include <cc310_glue.h>
- #endif                                /* MCUBOOT_USE_CC310 */
+#if defined(MCUBOOT_USE_CC310)
+    #include <cc310_glue.h>
+#endif                                /* MCUBOOT_USE_CC310 */
 
- #if defined(MCUBOOT_USE_PSA_CRYPTO)
-  #include <psa/crypto.h>
-  #include <string.h>
- #elif defined(MCUBOOT_USE_MBED_TLS)
-  #include <mbedtls/ecdsa.h>
-
-/* Indicate to the caller that the verify function needs the raw ASN.1
- * signature, not a decoded one. */
-  #define MCUBOOT_ECDSA_NEED_ASN1_SIG
- #endif                                /* MCUBOOT_USE_MBED_TLS */
+#if defined(MCUBOOT_USE_PSA_CRYPTO)
+    #include <psa/crypto.h>
+    #include <string.h>
+#elif defined(MCUBOOT_USE_MBED_TLS)
+    #include <mbedtls/ecdsa.h>
+    /* Indicate to the caller that the verify function needs the raw ASN.1
+     * signature, not a decoded one. */
+    #define MCUBOOT_ECDSA_NEED_ASN1_SIG
+#endif                                /* MCUBOOT_USE_MBED_TLS */
 
 /*TODO: remove this after cypress port mbedtls to abstract crypto api */
- #if defined(MCUBOOT_USE_CC310) || defined(MCUBOOT_USE_MBED_TLS)
-  #if defined(MCUBOOT_SIGN_EC384)
-   #define NUM_ECC_BYTES                         (384 / 8)
-  #else
-   #define NUM_ECC_BYTES                         (256 / 8)
-  #endif
- #endif
+#if defined(MCUBOOT_USE_CC310) || defined(MCUBOOT_USE_MBED_TLS)
+    #if defined(MCUBOOT_SIGN_EC384)
+        #define NUM_ECC_BYTES (384 / 8)
+    #else
+        #define NUM_ECC_BYTES (256 / 8)
+    #endif
+#endif
 
 /* Universal defines */
- #define BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE    (32)
- #define BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE    (48)
+#define BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE    (32)
+#define BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE    (48)
 
- #include "mbedtls/oid.h"
- #include "mbedtls/asn1.h"
- #include "bootutil/sign_key.h"
- #include "common.h"
+#include "mbedtls/oid.h"
+#include "mbedtls/asn1.h"
+#include "bootutil/sign_key.h"
+#include "common.h"
 
- #ifdef __cplusplus
+#ifdef __cplusplus
 extern "C" {
- #endif
+#endif
 
- #if (defined(MCUBOOT_USE_TINYCRYPT) || defined(MCUBOOT_USE_MBED_TLS) || \
-    defined(MCUBOOT_USE_CC310)) && !defined(MCUBOOT_USE_PSA_CRYPTO)
-
+#if (defined(MCUBOOT_USE_TINYCRYPT) || defined(MCUBOOT_USE_MBED_TLS) || \
+     defined(MCUBOOT_USE_CC310)) && !defined(MCUBOOT_USE_PSA_CRYPTO)
 /*
  * Declaring these like this adds NULL termination.
  */
@@ -97,9 +95,9 @@ static const uint8_t ec_secp256r1_oid[] = MBEDTLS_OID_EC_GRP_SECP256R1;
 /*
  * Parse a public key. Helper function.
  */
-static int bootutil_import_key (uint8_t ** cp, uint8_t * end)
+static int bootutil_import_key(uint8_t **cp, uint8_t *end)
 {
-    size_t           len;
+    size_t len;
     mbedtls_asn1_buf alg;
     mbedtls_asn1_buf param;
 
@@ -107,39 +105,33 @@ static int bootutil_import_key (uint8_t ** cp, uint8_t * end)
         MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) {
         return -1;
     }
-
     end = *cp + len;
 
     /* ECParameters (RFC5480) */
     if (mbedtls_asn1_get_alg(cp, end, &alg, &param) {
         return -2;
     }
-
     /* id-ecPublicKey (RFC5480) */
     if ((alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1) ||
         memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1)) {
         return -3;
     }
-
     /* namedCurve (RFC5480) */
-  #if defined(MCUBOOT_SIGN_EC384)
+#if defined(MCUBOOT_SIGN_EC384)
     if ((param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1) ||
         memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
         return -4;
     }
-
-  #else
+#else
     if ((param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1) ||
         memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
         return -4;
     }
-  #endif
-
+#endif
     /* ECPoint (RFC5480) */
     if (mbedtls_asn1_get_bitstring_null(cp, end, &len)) {
         return -6;
     }
-
     if (*cp + len != end) {
         return -7;
     }
@@ -151,9 +143,9 @@ static int bootutil_import_key (uint8_t ** cp, uint8_t * end)
     return 0;
 }
  #endif                                /* (MCUBOOT_USE_TINYCRYPT || MCUBOOT_USE_MBED_TLS || MCUBOOT_USE_CC310) && !MCUBOOT_USE_PSA_CRYPTO */
-
- #if defined(MCUBOOT_USE_TINYCRYPT)
-  #ifndef MCUBOOT_ECDSA_NEED_ASN1_SIG
+ 
+#if defined(MCUBOOT_USE_TINYCRYPT)
+#ifndef MCUBOOT_ECDSA_NEED_ASN1_SIG
 /*
  * cp points to ASN1 string containing an integer.
  * Verify the tag, and that the length is 32 bytes. Helper function.
@@ -167,21 +159,19 @@ static int bootutil_read_bigint (uint8_t i[NUM_ECC_BYTES], uint8_t ** cp, uint8_
 
     if (len >= NUM_ECC_BYTES) {
         memcpy(i, *cp + len - NUM_ECC_BYTES, NUM_ECC_BYTES);
-    }
-    else {
+    } else {
         memset(i, 0, NUM_ECC_BYTES - len);
         memcpy(i + NUM_ECC_BYTES - len, *cp, len);
     }
-
     *cp += len;
-
     return 0;
 }
 
 /*
  * Read in signature. Signature has r and s encoded as integers. Helper function.
  */
-static int bootutil_decode_sig (uint8_t signature[NUM_ECC_BYTES * 2], uint8_t * cp, uint8_t * end) {
+static int bootutil_decode_sig(uint8_t signature[NUM_ECC_BYTES * 2], uint8_t *cp, uint8_t *end)
+{
     int    rc;
     size_t len;
 
@@ -190,25 +180,20 @@ static int bootutil_decode_sig (uint8_t signature[NUM_ECC_BYTES * 2], uint8_t * 
     if (rc) {
         return -1;
     }
-
     if (cp + len > end) {
         return -2;
     }
-
     rc = bootutil_read_bigint(signature, &cp, end);
     if (rc) {
         return -3;
     }
-
     rc = bootutil_read_bigint(signature + NUM_ECC_BYTES, &cp, end);
     if (rc) {
         return -4;
     }
-
     return 0;
 }
-
-  #endif                               /* not MCUBOOT_ECDSA_NEED_ASN1_SIG */
+#endif                               /* not MCUBOOT_ECDSA_NEED_ASN1_SIG */
 
 typedef uintptr_t bootutil_ecdsa_context;
 static inline void bootutil_ecdsa_init (bootutil_ecdsa_context * ctx)
@@ -242,14 +227,12 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     if (pk[0] != 0x04) {
         return -1;
     }
-
     pk++;
 
     rc = uECC_verify(pk, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE, signature, uECC_secp256r1());
     if (rc != TC_CRYPTO_SUCCESS) {
         return -1;
     }
-
     return 0;
 }
 
@@ -261,9 +244,9 @@ static inline int bootutil_ecdsa_parse_public_key (bootutil_ecdsa_context * ctx,
     return bootutil_import_key(cp, end);
 }
 
- #endif                                /* MCUBOOT_USE_TINYCRYPT */
+#endif                                /* MCUBOOT_USE_TINYCRYPT */
 
- #if defined(MCUBOOT_USE_CC310)
+#if defined(MCUBOOT_USE_CC310)
 typedef uintptr_t bootutil_ecdsa_context;
 static inline void bootutil_ecdsa_init (bootutil_ecdsa_context * ctx)
 {
@@ -298,13 +281,11 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
 static inline int bootutil_ecdsa_parse_public_key (bootutil_ecdsa_context * ctx, uint8_t ** cp, uint8_t * end)
 {
     (void) ctx;
-
     return bootutil_import_key(cp, end);
 }
-
  #endif                                /* MCUBOOT_USE_CC310 */
 
- #if defined(MCUBOOT_USE_PSA_CRYPTO)
+#if defined(MCUBOOT_USE_PSA_CRYPTO)
 typedef struct {
     psa_key_id_t    key_id;
     size_t          curve_byte_count;
@@ -333,16 +314,16 @@ typedef struct {
 /* Offset in bytes from the start of the encoding to the length field
  * of the innermost SEQUENCE in the ECDSA public key
  */
-  #define PUB_KEY_LEN_OFF    (3)
+#define PUB_KEY_LEN_OFF (3)
 
 /* Offset in bytes from the start of the publicKey encoding of the BIT STRING */
-  #define PUB_KEY_VAL_OFF    (3)
+#define PUB_KEY_VAL_OFF (3)
 
 /* Computes the pointer to the idEcPublicKey OID from the base of the encoding */
-  #define PUB_KEY_OID_OFFSET(p)       (*p + PUB_KEY_LEN_OFF + 1)
+#define PUB_KEY_OID_OFFSET(p) (*p + PUB_KEY_LEN_OFF + 1)
 
 /* Computes the pointer to the namedCurve OID from the base of the encoding */
-  #define CURVE_TYPE_OID_OFFSET(p)    PUB_KEY_OID_OFFSET(p) + sizeof(IdEcPublicKey)
+#define CURVE_TYPE_OID_OFFSET(p) PUB_KEY_OID_OFFSET(p) + sizeof(IdEcPublicKey)
 
 /* This helper function gets a pointer to the bitstring associated to the publicKey
  * as encoded per RFC 5280. This function assumes that the public key encoding is not
@@ -392,8 +373,7 @@ static void parse_signature_from_rfc5480_encoding (const uint8_t * sig,
         if (r_len % 2) {
             r_len--;
         }
-    }
-    else {
+    } else {
         /* For encodings that reduce the size of r or s in case of zeros */
         memcpy(&r_s_pair[num_of_curve_bytes - r_len], sig_ptr, r_len);
     }
@@ -404,8 +384,7 @@ static void parse_signature_from_rfc5480_encoding (const uint8_t * sig,
     if (s_len >= num_of_curve_bytes) {
         sig_ptr = sig_ptr + s_len - num_of_curve_bytes;
         memcpy(&r_s_pair[num_of_curve_bytes], sig_ptr, num_of_curve_bytes);
-    }
-    else {
+    } else {
         /* For encodings that reduce the size of r or s in case of zeros */
         memcpy(&r_s_pair[2 * num_of_curve_bytes - s_len], sig_ptr, s_len);
     }
@@ -413,37 +392,37 @@ static void parse_signature_from_rfc5480_encoding (const uint8_t * sig,
 
 // OID id-ecPublicKey 1.2.840.10045.2.1.
 static const uint8_t IdEcPublicKey[] = {0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 0x01};
-  #if defined(MCUBOOT_SIGN_EC256)
+#if defined(MCUBOOT_SIGN_EC256)
 // OID secp256r1 1.2.840.10045.3.1.7.
 static const uint8_t Secp256r1[] = {0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03, 0x01, 0x07};
-  #endif                               /* MCUBOOT_SIGN_EC256 */
-  #if defined(MCUBOOT_SIGN_EC384)
+#endif                               /* MCUBOOT_SIGN_EC256 */
+#if defined(MCUBOOT_SIGN_EC384)
 // OID secp384r1 1.3.132.0.34
 static const uint8_t Secp384r1[] = {0x06, 0x05, 0x2b, 0x81, 0x04, 0x00, 0x22};
-  #endif                               /* MCUBOOT_SIGN_EC384 */
+#endif                               /* MCUBOOT_SIGN_EC384 */
 
 static inline void bootutil_ecdsa_init (bootutil_ecdsa_context * ctx)
 {
-  #if !defined(MCUBOOT_BUILTIN_KEY)
+#if !defined(MCUBOOT_BUILTIN_KEY)
     ctx->key_id             = PSA_KEY_ID_NULL;
     ctx->curve_byte_count   = 0;
     ctx->required_algorithm = 0;
 
-  #else                                /* !MCUBOOT_BUILTIN_KEY */
+#else                                /* !MCUBOOT_BUILTIN_KEY */
     /* The incoming key ID is equal to the image index. The key ID value must be
      * shifted (by one in this case) because zero is reserved (PSA_KEY_ID_NULL)
      * and considered invalid.
      */
     ctx->key_id++; /* Make sure it is not equal to 0. */
-   #if defined(MCUBOOT_SIGN_EC256)
+#if defined(MCUBOOT_SIGN_EC256)
     ctx->curve_byte_count   = 32;
     ctx->required_algorithm = PSA_ALG_SHA_256;
-   #endif                              /* MCUBOOT_SIGN_EC256 */
-   #if defined(MCUBOOT_SIGN_EC384)
+#endif                              /* MCUBOOT_SIGN_EC256 */
+#if defined(MCUBOOT_SIGN_EC384)
     ctx->curve_byte_count   = 48;
     ctx->required_algorithm = PSA_ALG_SHA_384;
-   #endif                              /* MCUBOOT_SIGN_EC384 */
-  #endif                               /* !MCUBOOT_BUILTIN_KEY */
+#endif                              /* MCUBOOT_SIGN_EC384 */
+#endif                               /* !MCUBOOT_BUILTIN_KEY */
 }
 
 static inline void bootutil_ecdsa_drop (bootutil_ecdsa_context * ctx)
@@ -453,7 +432,7 @@ static inline void bootutil_ecdsa_drop (bootutil_ecdsa_context * ctx)
     }
 }
 
-  #if !defined(MCUBOOT_BUILTIN_KEY)
+#if !defined(MCUBOOT_BUILTIN_KEY)
 /*
  * Parse a ECDSA public key with format specified in RFC5280 et al.
  *
@@ -474,18 +453,18 @@ static int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
         return (int) PSA_ERROR_INVALID_ARGUMENT;
     }
 
-   #if defined(MCUBOOT_SIGN_EC256)
+#if defined(MCUBOOT_SIGN_EC256)
     if (!memcmp(CURVE_TYPE_OID_OFFSET(cp), Secp256r1, sizeof(Secp256r1))) {
         ctx->curve_byte_count   = 32;
         ctx->required_algorithm = PSA_ALG_SHA_256;
     } else
-   #endif                              /* MCUBOOT_SIGN_EC256 */
-   #if defined(MCUBOOT_SIGN_EC384)
+#endif                              /* MCUBOOT_SIGN_EC256 */
+#if defined(MCUBOOT_SIGN_EC384)
     if (!memcmp(CURVE_TYPE_OID_OFFSET(cp), Secp384r1, sizeof(Secp384r1))) {
         ctx->curve_byte_count   = 48;
         ctx->required_algorithm = PSA_ALG_SHA_384;
     } else
-   #endif                              /* MCUBOOT_SIGN_EC384 */
+#endif                              /* MCUBOOT_SIGN_EC384 */
     {
         return (int) PSA_ERROR_INVALID_ARGUMENT;
     }
@@ -498,8 +477,7 @@ static int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
 
     return (int) psa_import_key(&key_attributes, *cp, key_size, &ctx->key_id);
 }
-
-  #endif                               /* !MCUBOOT_BUILTIN_KEY */
+#endif                               /* !MCUBOOT_BUILTIN_KEY */
 
 /* Verify the signature against the provided hash. The signature gets parsed from
  * the encoding first, then PSA Crypto has a dedicated API for ECDSA verification
@@ -519,7 +497,7 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     return (int) psa_verify_hash(ctx->key_id, PSA_ALG_ECDSA(ctx->required_algorithm),
                                  hash, hlen, reformatted_signature, 2 * ctx->curve_byte_count);
 }
- #elif defined(MCUBOOT_USE_MBED_TLS)
+#elif defined(MCUBOOT_USE_MBED_TLS)
 
 typedef mbedtls_ecdsa_context bootutil_ecdsa_context;
 static inline void bootutil_ecdsa_init (bootutil_ecdsa_context * ctx)
@@ -546,22 +524,28 @@ static int bootutil_parse_eckey (bootutil_ecdsa_context * ctx, uint8_t ** p, uin
         MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE)) {
         return -1;
     }
-
     end = *p + len;
 
     if (mbedtls_asn1_get_alg(p, end, &alg, &param)) {
         return -2;
     }
 
-    if ((alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1) ||
+    if (alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1)||
         memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1)) {
         return -3;
     }
 
-    if ((param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1) ||
-        memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
+#if defined(MCUBOOT_SIGN_EC384)
+    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1) ||
+        memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1) {
         return -4;
     }
+#else
+    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1) ||
+        memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1) {
+        return -4;
+    }
+#endif
 
     if (mbedtls_ecp_group_load(&ctx->grp, MBEDTLS_ECP_DP_SECP256R1)) {
         return -5;
@@ -570,7 +554,6 @@ static int bootutil_parse_eckey (bootutil_ecdsa_context * ctx, uint8_t ** p, uin
     if (mbedtls_asn1_get_bitstring_null(p, end, &len)) {
         return -6;
     }
-
     if (*p + len != end) {
         return -7;
     }
@@ -582,7 +565,6 @@ static int bootutil_parse_eckey (bootutil_ecdsa_context * ctx, uint8_t ** p, uin
     if (mbedtls_ecp_check_pubkey(&ctx->grp, &ctx->Q)) {
         return -9;
     }
-
     return 0;
 }
 
@@ -600,7 +582,6 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     while (sig[sig_len - 1] == '\0') {
         sig_len--;
     }
-
     return mbedtls_ecdsa_read_signature(&ctx, hash, hash_len, sig, sig_len);
 }
 
@@ -617,11 +598,11 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     (void) hash;
     (void) hash_len;
 
-   #if defined(MCUBOOT_SIGN_EC384)
+#if defined(MCUBOOT_SIGN_EC384)
     rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP384R1);
-   #else
+#else
     rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP256R1);
-   #endif
+#endif
     if (rc) {
         return -1;
     }
@@ -636,11 +617,11 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
         return -1;
     }
 
-   #if defined(MCUBOOT_SIGN_EC384)
+#if defined(MCUBOOT_SIGN_EC384)
     rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE, sig, sig_len);
-   #else
+#else
     rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE, sig, sig_len);
-   #endif
+#endif
     if (rc) {
         return -1;
     }
@@ -648,24 +629,24 @@ static inline int bootutil_ecdsa_verify (bootutil_ecdsa_context * ctx,
     return 0;
 }
 
-  #endif                               /* CY_MBEDTLS_HW_ACCELERATION */
+#endif                               /* CY_MBEDTLS_HW_ACCELERATION */
 
 static inline int bootutil_ecdsa_parse_public_key (bootutil_ecdsa_context * ctx, uint8_t ** cp, uint8_t * end)
 {
     int rc;
-  #ifdef CY_MBEDTLS_HW_ACCELERATION
+#ifdef CY_MBEDTLS_HW_ACCELERATION
     rc = bootutil_parse_eckey(&ctx, cp, end);
-  #else
+#else
     (void) ctx;
     rc = bootutil_import_key(cp, end);
-  #endif
+#endif
     return rc;
 }
 
- #endif                                /* MCUBOOT_USE_MBED_TLS */
+#endif                                /* MCUBOOT_USE_MBED_TLS */
 
- #ifdef __cplusplus
+#ifdef __cplusplus
 }
- #endif
+#endif
 
 #endif                                 /* __BOOTUTIL_CRYPTO_ECDSA_H_ */
