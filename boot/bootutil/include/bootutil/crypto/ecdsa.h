@@ -150,7 +150,8 @@ static int bootutil_import_key(uint8_t **cp, uint8_t *end)
  * cp points to ASN1 string containing an integer.
  * Verify the tag, and that the length is 32 bytes. Helper function.
  */
-static int bootutil_read_bigint(uint8_t i[NUM_ECC_BYTES], uint8_t **cp, uint8_t *end) {
+static int bootutil_read_bigint(uint8_t i[NUM_ECC_BYTES], uint8_t **cp, uint8_t *end)
+{
     size_t len;
 
     if (mbedtls_asn1_get_tag(cp, end, &len, MBEDTLS_ASN1_INTEGER)) {
@@ -199,15 +200,15 @@ static int bootutil_decode_sig(uint8_t signature[NUM_ECC_BYTES * 2], uint8_t *cp
 typedef uintptr_t bootutil_ecdsa_context;
 static inline void bootutil_ecdsa_init(bootutil_ecdsa_context *ctx)
 {
-    (void) ctx;
+    (void)ctx;
 }
 
 static inline void bootutil_ecdsa_drop(bootutil_ecdsa_context *ctx)
 {
-    (void) ctx;
+    (void)ctx;
 }
 
-static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context * ctx,
+static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
                                         uint8_t *pk, size_t pk_len,
                                         uint8_t *hash, size_t hash_len,
                                         uint8_t *sig, size_t sig_len)
@@ -241,10 +242,8 @@ static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
                                                   uint8_t **cp,uint8_t *end)
 {
     (void)ctx;
-
     return bootutil_import_key(cp, end);
 }
-
 #endif /* MCUBOOT_USE_TINYCRYPT */
 
 #if defined(MCUBOOT_USE_CC310)
@@ -278,7 +277,7 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
     return cc310_ecdsa_verify_secp256r1(hash, pk, sig, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE);
 }
 
-static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context * ctx,
+static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
                                                   uint8_t **cp,uint8_t *end)
 {
     (void)ctx;
@@ -336,11 +335,11 @@ typedef struct {
  * \param[out]    size Pointer to a buffer containing the size of the public key extracted
  *
  */
-static inline void get_public_key_from_rfc5280_encoding(uint8_t * p, size_t  size)
+static inline void get_public_key_from_rfc5280_encoding(uint8_t **p, size_t  *size)
 {
     uint8_t * key_start = (*p) + (PUB_KEY_LEN_OFF + 1 + (*p)[PUB_KEY_LEN_OFF] + PUB_KEY_VAL_OFF);
     *p    = key_start;
-    *size = key_start[-2] - 1;         /* -2 from PUB_KEY_VAL_OFF to get the length, -1 to remove the ASN.1 padding byte count */
+    *size = key_start[-2]-1; /* -2 from PUB_KEY_VAL_OFF to get the length, -1 to remove the ASN.1 padding byte count */
 }
 
 /* This helper function parses a signature as specified in RFC3279 into a pair
@@ -381,9 +380,9 @@ static void parse_signature_from_rfc5480_encoding(const uint8_t *sig,
 
     /* Move s in place */
     size_t s_len = sig_ptr[r_len+1]; /*  + 1 to skip SEQUENCE */
-    sig_ptr = &sig_ptr[r_len+2];
+    sig_ptr  = &sig_ptr[r_len+2];
     if (s_len >= num_of_curve_bytes) {
-        sig_ptr  = sig_ptr + s_len - num_of_curve_bytes;
+        sig_ptr = sig_ptr + s_len - num_of_curve_bytes;
         memcpy(&r_s_pair[num_of_curve_bytes], sig_ptr, num_of_curve_bytes);
     } else {
         /* For encodings that reduce the size of r or s in case of zeros */
@@ -488,9 +487,9 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
                                         uint8_t *hash, size_t hlen,
                                         uint8_t *sig, size_t slen)
 {
-    (void) pk;
-    (void) pk_len;
-    (void) slen;
+    (void)pk;
+    (void)pk_len;
+    (void)slen;
 
     uint8_t reformatted_signature[96] = {0}; /* Enough for P-384 signature sizes */
     parse_signature_from_rfc5480_encoding(sig, ctx->curve_byte_count,reformatted_signature);
@@ -531,18 +530,18 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
         return -2;
     }
 
-    if (alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1)||
-      memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1)) {
+    if (alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1 ||
+      memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1) {
         return -3;
     }
 
 #if defined(MCUBOOT_SIGN_EC384)
-    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1) ||
+    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1 ||
       memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1) {
         return -4;
     }
 #else /* MCUBOOT_SIGN_EC384 */
-    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1) ||
+    if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1 ||
       memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1) {
         return -4;
     }
@@ -574,8 +573,8 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
                                         uint8_t *hash, size_t hash_len,
                                         uint8_t *sig, size_t sig_len)
 {
-    (void) pk;
-    (void) pk_len;
+    (void)pk;
+    (void)pk_len;
 
     /*
      * This is simplified, as the hash length is also 32 bytes.
@@ -595,9 +594,9 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
 {
     int rc;
 
-    (void) sig;
-    (void) hash;
-    (void) hash_len;
+    (void)sig;
+    (void)hash;
+    (void)hash_len;
 
 #if defined(MCUBOOT_SIGN_EC384)
     rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP384R1);
@@ -634,7 +633,8 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
 
 #endif /* CY_MBEDTLS_HW_ACCELERATION */
 
-static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx, uint8_t **cp, uint8_t *end)
+static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx
+                                                  uint8_t **cp, uint8_t *end)
 {
     int rc;
 #ifdef CY_MBEDTLS_HW_ACCELERATION
