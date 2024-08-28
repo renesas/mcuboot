@@ -120,14 +120,12 @@ static int bootutil_import_key(uint8_t **cp, uint8_t *end)
 #if defined(MCUBOOT_SIGN_EC384)
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1 ||
         memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
-        return -4;
-    }
 #else /* MCUBOOT_SIGN_EC384 */
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1 ||
         memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
+#endif /* MCUBOOT_SIGN_EC384 */
         return -4;
     }
-#endif /* MCUBOOT_SIGN_EC384 */
     /* ECPoint (RFC5480) */
     if (mbedtls_asn1_get_bitstring_null(cp, end, &len)) {
         return -6;
@@ -536,16 +534,18 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
 #if defined(MCUBOOT_SIGN_EC384)
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1||
       memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
-        return -4;
-    }
 #else /* MCUBOOT_SIGN_EC384 */
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1||
       memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
+#endif /* MCUBOOT_SIGN_EC384 */
         return -4;
     }
-#endif /* MCUBOOT_SIGN_EC384 */
 
+#if defined(MCUBOOT_SIGN_EC384)
+    if (mbedtls_ecp_group_load(&ctx->grp, MBEDTLS_ECP_DP_SECP384R1)) {
+#else /* MCUBOOT_SIGN_EC384 */
     if (mbedtls_ecp_group_load(&ctx->grp, MBEDTLS_ECP_DP_SECP256R1)) {
+#endif /* MCUBOOT_SIGN_EC384 */
         return -5;
     }
 
