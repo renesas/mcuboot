@@ -335,10 +335,10 @@ typedef struct {
  * \param[out]    size Pointer to a buffer containing the size of the public key extracted
  *
  */
-static inline void get_public_key_from_rfc5280_encoding(uint8_t **p, size_t  *size)
+static inline void get_public_key_from_rfc5280_encoding(uint8_t **p, size_t *size)
 {
-    uint8_t * key_start = (*p) + (PUB_KEY_LEN_OFF + 1 + (*p)[PUB_KEY_LEN_OFF] + PUB_KEY_VAL_OFF);
-    *p    = key_start;
+    uint8_t *key_start = (*p) + (PUB_KEY_LEN_OFF + 1 + (*p)[PUB_KEY_LEN_OFF] + PUB_KEY_VAL_OFF);
+    *p = key_start;
     *size = key_start[-2]-1; /* -2 from PUB_KEY_VAL_OFF to get the length, -1 to remove the ASN.1 padding byte count */
 }
 
@@ -529,20 +529,18 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
     if (mbedtls_asn1_get_alg(p, end, &alg, &param)) {
         return -2;
     }
-
     if (alg.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_pubkey_oid) - 1 ||
-      memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1) {
+      memcmp(alg.MBEDTLS_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1)) {
         return -3;
     }
-
 #if defined(MCUBOOT_SIGN_EC384)
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1 ||
-      memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1) {
+      memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
         return -4;
     }
 #else /* MCUBOOT_SIGN_EC384 */
     if (param.MBEDTLS_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1 ||
-      memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1) {
+      memcmp(param.MBEDTLS_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
         return -4;
     }
 #endif /* MCUBOOT_SIGN_EC384 */
@@ -633,7 +631,7 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
 
 #endif /* CY_MBEDTLS_HW_ACCELERATION */
 
-static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx
+static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
                                                   uint8_t **cp, uint8_t *end)
 {
     int rc;
