@@ -91,8 +91,12 @@ extern "C" {
 static const uint8_t ec_pubkey_oid[] = MBEDTLS_OID_EC_ALG_UNRESTRICTED;
 #if defined(MCUBOOT_SIGN_EC384)
 static const uint8_t ec_curve_oid[] = MBEDTLS_OID_EC_GRP_SECP384R1;
+#define EC_CURVE_GROUP MBEDTLS_ECP_DP_SECP384R1
+#define BOOTUTIL_CRYPTO_ECDSA_HASH_SIZE BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE
 #else
 static const uint8_t ec_curve_oid[] = MBEDTLS_OID_EC_GRP_SECP256R1;
+#define EC_CURVE_GROUP MBEDTLS_ECP_DP_SECP256R1
+#define BOOTUTIL_CRYPTO_ECDSA_HASH_SIZE BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE
 #endif /* MCUBOOT_SIGN_EC384 */
 
 /*
@@ -534,11 +538,7 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
         return -4;
     }
 
-#if defined(MCUBOOT_SIGN_EC384)
-    if (mbedtls_ecp_group_load(&ctx->grp, MBEDTLS_ECP_DP_SECP384R1)) {
-#else /* MCUBOOT_SIGN_EC384 */
-    if (mbedtls_ecp_group_load(&ctx->grp, MBEDTLS_ECP_DP_SECP256R1)) {
-#endif /* MCUBOOT_SIGN_EC384 */
+    if (mbedtls_ecp_group_load(&ctx->grp, EC_CURVE_GROUP)) {
         return -5;
     }
 
@@ -589,11 +589,7 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
     (void)hash;
     (void)hash_len;
 
-#if defined(MCUBOOT_SIGN_EC384)
-    rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP384R1);
-#else /* MCUBOOT_SIGN_EC384 */
-    rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), MBEDTLS_ECP_DP_SECP256R1);
-#endif /* MCUBOOT_SIGN_EC384 */
+    rc = mbedtls_ecp_group_load(&ctx->MBEDTLS_CONTEXT_MEMBER(grp), EC_CURVE_GROUP);
     if (rc) {
         return -1;
     }
@@ -608,13 +604,8 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
         return -1;
     }
 
-#if defined(MCUBOOT_SIGN_EC384)
-    rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P384_HASH_SIZE,
+    rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_HASH_SIZE,
                                       sig, sig_len);
-#else /* MCUBOOT_SIGN_EC384 */
-    rc = mbedtls_ecdsa_read_signature(ctx, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE,
-                                      sig, sig_len);
-#endif /* MCUBOOT_SIGN_EC384 */
     if (rc) {
         return -1;
     }
