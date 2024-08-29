@@ -27,6 +27,7 @@
 #define MCUBOOT_USE_PSA_OR_MBED_TLS
 #endif /* MCUBOOT_USE_PSA_CRYPTO || MCUBOOT_USE_MBED_TLS */
 
+/* Disabling this check until we support PSA Crypto. Added support for P384 for MBEDTLS instead */
 // #if defined(MCUBOOT_SIGN_EC384) && \
 //     !defined(MCUBOOT_USE_PSA_CRYPTO)
 // #error "P384 requires PSA_CRYPTO to be defined"
@@ -89,9 +90,9 @@ extern "C" {
  */
 static const uint8_t ec_pubkey_oid[] = MBEDTLS_OID_EC_ALG_UNRESTRICTED;
 #if defined(MCUBOOT_SIGN_EC384)
-static const uint8_t ec_secp384r1_oid[] = MBEDTLS_OID_EC_GRP_SECP384R1;
+static const uint8_t ec_curve_oid[] = MBEDTLS_OID_EC_GRP_SECP384R1;
 #else
-static const uint8_t ec_secp256r1_oid[] = MBEDTLS_OID_EC_GRP_SECP256R1;
+static const uint8_t ec_curve_oid[] = MBEDTLS_OID_EC_GRP_SECP256R1;
 #endif /* MCUBOOT_SIGN_EC384 */
 
 /*
@@ -119,14 +120,9 @@ static int bootutil_import_key(uint8_t **cp, uint8_t *end)
         return -3;
     }
     /* namedCurve (RFC5480) */
-  #if defined(MCUBOOT_SIGN_EC384)
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1 ||
-        memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
-  #else
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1 ||
-        memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
-  #endif
-            return -4;
+    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_curve_oid) - 1 ||
+        memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_curve_oid, sizeof(ec_curve_oid) - 1)) {
+        return -4;
     }
     /* ECPoint (RFC5480) */
     if (mbedtls_asn1_get_bitstring_null(cp, end, &len)) {
@@ -533,13 +529,8 @@ static int bootutil_parse_eckey(bootutil_ecdsa_context *ctx, uint8_t **p, uint8_
       memcmp(alg.ASN1_CONTEXT_MEMBER(p), ec_pubkey_oid, sizeof(ec_pubkey_oid) - 1)) {
         return -3;
     }
-#if defined(MCUBOOT_SIGN_EC384)
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp384r1_oid) - 1||
-      memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp384r1_oid, sizeof(ec_secp384r1_oid) - 1)) {
-#else
-    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_secp256r1_oid) - 1||
-      memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_secp256r1_oid, sizeof(ec_secp256r1_oid) - 1)) {
-#endif
+    if (param.ASN1_CONTEXT_MEMBER(len) != sizeof(ec_curve_oid) - 1 ||
+      memcmp(param.ASN1_CONTEXT_MEMBER(p), ec_curve_oid, sizeof(ec_curve_oid) - 1)) {
         return -4;
     }
 

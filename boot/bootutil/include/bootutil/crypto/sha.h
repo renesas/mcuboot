@@ -145,7 +145,8 @@ static inline int bootutil_sha_init(bootutil_sha_context *ctx)
     ret = mbedtls_sha512_starts(ctx, 0);
 #elif defined(MCUBOOT_SIGN_EC384)
     mbedtls_sha512_init(ctx);
-    ret = mbedtls_sha512_starts(ctx, 1);
+    /* true passed in here is to selected SHA384 instead of SHA512 */
+    ret = mbedtls_sha512_starts(ctx, true);
 #else
     mbedtls_sha256_init(ctx);
     ret = mbedtls_sha256_starts(ctx, 0);
