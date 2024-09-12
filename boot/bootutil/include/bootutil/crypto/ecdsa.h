@@ -27,11 +27,12 @@
 #define MCUBOOT_USE_PSA_OR_MBED_TLS
 #endif /* MCUBOOT_USE_PSA_CRYPTO || MCUBOOT_USE_MBED_TLS */
 
-/* Disabling this check until we support PSA Crypto. Added support for P384 for MBEDTLS instead */
-// #if defined(MCUBOOT_SIGN_EC384) && \
-//     !defined(MCUBOOT_USE_PSA_CRYPTO)
-// #error "P384 requires PSA_CRYPTO to be defined"
-// #endif
+/* Disabling this check until we support PSA Crypto. Added support for P384 for MBEDTLS instead
+#if defined(MCUBOOT_SIGN_EC384) && \
+    !defined(MCUBOOT_USE_PSA_CRYPTO)
+ #error "P384 requires PSA_CRYPTO to be defined"
+#endif
+*/
 
 #if (defined(MCUBOOT_USE_TINYCRYPT) + \
      defined(MCUBOOT_USE_CC310) + \
