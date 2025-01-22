@@ -37,8 +37,9 @@
 #if (defined(MCUBOOT_USE_TINYCRYPT) + \
      defined(MCUBOOT_USE_CC310) + \
      defined(MCUBOOT_USE_PSA_OR_MBED_TLS) + \
+     defined(MCUBOOT_USE_OCRYPTO) + \
      defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)) != 1
-    #error "One crypto backend must be defined: either CC310/TINYCRYPT/MBED_TLS/PSA_CRYPTO/User defined implementation"
+    #error "One crypto backend must be defined: either CC310/TINYCRYPT/MBED_TLS/PSA_CRYPTO/OCRYPTO/User defined implementation"
 #endif
 
 #if defined(MCUBOOT_USE_TINYCRYPT)
@@ -49,6 +50,12 @@
 #if defined(MCUBOOT_USE_CC310)
     #include <cc310_glue.h>
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+    #include "ocrypto_constant_time.h"
+    #include "ocrypto_ecdsa_p256.h"
+    #define NUM_ECC_BYTES 32
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #if defined(MCUBOOT_USE_PSA_CRYPTO)
     #include <psa/crypto.h>
@@ -85,7 +92,7 @@ extern "C" {
 #endif
 
 #if (defined(MCUBOOT_USE_TINYCRYPT) || defined(MCUBOOT_USE_MBED_TLS) || \
-     defined(MCUBOOT_USE_CC310)) && !defined(MCUBOOT_USE_PSA_CRYPTO)
+     defined(MCUBOOT_USE_CC310) || defined(MCUBOOT_USE_OCRYPTO)) && !defined(MCUBOOT_USE_PSA_CRYPTO)
 /*
  * Declaring these like this adds NULL termination.
  */
@@ -285,6 +292,40 @@ static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
     return bootutil_import_key(cp, end);
 }
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+typedef uintptr_t bootutil_ecdsa_context;
+typedef uintptr_t bootutil_ecdsa_context;
+static inline void bootutil_ecdsa_init(bootutil_ecdsa_context *ctx)
+{
+    (void)ctx;
+}
+
+static inline void bootutil_ecdsa_drop(bootutil_ecdsa_context *ctx)
+{
+    (void)ctx;
+}
+
+static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
+                                        uint8_t *pk, size_t pk_len,
+                                        uint8_t *hash, size_t hash_len,
+                                        uint8_t *sig, size_t sig_len)
+{
+    (void)ctx;
+    (void)pk_len;
+    (void)hash_len;
+    (void)sig_len;
+
+    return ocrypto_ecdsa_p256_verify(sig, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE, pk);
+}
+
+static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
+                                                  uint8_t **cp,uint8_t *end)
+{
+    (void)ctx;
+    return bootutil_import_key(cp, end);
+}
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #if defined(MCUBOOT_USE_PSA_CRYPTO)
 typedef struct {

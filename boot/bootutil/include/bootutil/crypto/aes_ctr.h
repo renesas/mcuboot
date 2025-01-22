@@ -13,13 +13,19 @@
 #include "mcuboot_config/mcuboot_config.h"
 
 #if (defined(MCUBOOT_USE_MBED_TLS) + \
-     defined(MCUBOOT_USE_TINYCRYPT) + defined(MCUBOOT_USE_PSA_CRYPTO)) != 1
-    #error "One crypto backend must be defined: either MBED_TLS or TINYCRYPT or PSA"
+     defined(MCUBOOT_USE_OCRYPTO) + defined(MCUBOOT_USE_TINYCRYPT) + defined(MCUBOOT_USE_PSA_CRYPTO)) != 1
+    #error "One crypto backend must be defined: either MBED_TLS or OCRYPTO or TINYCRYPT or PSA"
 #endif
 
 #if defined(MCUBOOT_USE_MBED_TLS)
     #include "bootutil/crypto/aes_ctr_mbedtls.h"
 #endif /* MCUBOOT_USE_MBED_TLS */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+    #include "ocrypto_aes_ctr.h"
+    #include "bootutil/enc_key_public.h"
+    #define BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE BOOT_ENC_KEY_SIZE
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #if defined(MCUBOOT_USE_TINYCRYPT)
     #include "bootutil/crypto/aes_ctr_tinycrypt.h"
@@ -27,6 +33,10 @@
 
 #if defined(MCUBOOT_USE_PSA_CRYPTO)
     #include "bootutil/crypto/aes_ctr_psa.h"
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif /* __BOOTUTIL_CRYPTO_AES_CTR_H_ */

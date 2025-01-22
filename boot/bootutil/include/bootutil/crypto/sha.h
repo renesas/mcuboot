@@ -31,8 +31,9 @@
 #if (defined(MCUBOOT_USE_PSA_OR_MBED_TLS) + \
      defined(MCUBOOT_USE_TINYCRYPT) + \
      defined(MCUBOOT_USE_CC310) + \
+     defined(MCUBOOT_USE_OCRYPTO) + \
      defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)) != 1
-    #error "One crypto backend must be defined: either CC310/MBED_TLS/TINYCRYPT/PSA_CRYPTO/User defined implementation"
+    #error "One crypto backend must be defined: either CC310/MBED_TLS/TINYCRYPT/PSA_CRYPTO/OCRYPTO/User defined implementation"
 #endif
 
 #if defined(MCUBOOT_SHA512)
@@ -78,6 +79,10 @@
 #if defined(MCUBOOT_USE_CC310)
     #include <cc310_glue.h>
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+    #include "ocrypto_sha256.h"
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #include <stdint.h>
 
@@ -271,6 +276,37 @@ static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
     return 0;
 }
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+typedef ocrypto_sha256_ctx bootutil_sha_context;
+
+static inline int bootutil_sha_init(bootutil_sha_context *ctx)
+{
+    ocrypto_sha256_init(ctx);
+    return 0;
+}
+
+static inline int bootutil_sha_drop(bootutil_sha_context *ctx)
+{
+    (void)ctx;
+    return 0;
+}
+
+static inline int bootutil_sha_update(bootutil_sha_context *ctx,
+                                      const void *data,
+                                      uint32_t data_len)
+{
+    ocrypto_sha256_update(ctx, data, data_len);
+    return 0;
+}
+
+static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
+                                      uint8_t *output)
+{
+    ocrypto_sha256_final(ctx, output);
+    return 0;
+}
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #ifdef __cplusplus
 }
