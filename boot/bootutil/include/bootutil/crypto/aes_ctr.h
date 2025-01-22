@@ -15,8 +15,9 @@
 #include "mcuboot_config/mcuboot_config.h"
 
 #if (defined(MCUBOOT_USE_MBED_TLS) + \
+     defined(MCUBOOT_USE_OCRYPTO) + \
      defined(MCUBOOT_USE_TINYCRYPT)) != 1
-    #error "One crypto backend must be defined: either MBED_TLS or TINYCRYPT"
+    #error "One crypto backend must be defined: either MBED_TLS, OCRYPTO or TINYCRYPT"
 #endif
 
 #if defined(MCUBOOT_USE_MBED_TLS)
@@ -25,6 +26,13 @@
     #define BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE BOOT_ENC_KEY_SIZE
     #define BOOTUTIL_CRYPTO_AES_CTR_BLOCK_SIZE (16)
 #endif /* MCUBOOT_USE_MBED_TLS */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+    #include "ocrypto_aes_ctr.h"
+    #include "bootutil/enc_key_public.h"
+    #define BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE BOOT_ENC_KEY_SIZE
+    #define BOOTUTIL_CRYPTO_AES_CTR_BLOCK_SIZE (16)
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #if defined(MCUBOOT_USE_TINYCRYPT)
     #if defined(MCUBOOT_AES_256)
@@ -129,6 +137,43 @@ static inline int bootutil_aes_ctr_finish(bootutil_aes_ctr_context *ctx)
         return 0;
 }
 #endif /* MCUBOOT_USE_TINYCRYPT */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+typedef ocrypto_aes_ctr_ctx bootutil_aes_ctr_context;
+static inline void bootutil_aes_ctr_init(bootutil_aes_ctr_context *ctx)
+{
+    (void)ctx;
+}
+
+static inline void bootutil_aes_ctr_drop(bootutil_aes_ctr_context *ctx)
+{
+    (void)ctx;
+}
+
+static inline int bootutil_aes_ctr_set_key(bootutil_aes_ctr_context *ctx, const uint8_t *k)
+{
+    ocrypto_aes_ctr_init(ctx, k, BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE, NULL);
+    return 0;
+}
+
+static inline int bootutil_aes_ctr_encrypt(bootutil_aes_ctr_context *ctx, uint8_t *counter, const uint8_t *m, uint32_t mlen, size_t blk_off, uint8_t *c)
+{
+    ocrypto_aes_ctr_encrypt(m, c, mlen, ctx->xkey, ctx->key_size, NULL);
+    return 0;
+}
+
+static inline int bootutil_aes_ctr_decrypt(bootutil_aes_ctr_context *ctx, uint8_t *counter, const uint8_t *c, uint32_t clen, size_t blk_off, uint8_t *m)
+{
+    ocrypto_aes_ctr_encrypt(c, m, clen, ctx->xkey, ctx->key_size, NULL);
+    return 0;
+}
+
+static inline int bootutil_aes_ctr_finish(bootutil_aes_ctr_context *ctx)
+{
+    (void)ctx;
+    return 0;
+}
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #ifdef __cplusplus
 }
