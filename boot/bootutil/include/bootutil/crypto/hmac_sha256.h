@@ -32,7 +32,7 @@
   #include <tinycrypt/hmac.h>
  #endif                                /* MCUBOOT_USE_TINYCRYPT */
 
- #if defined(MCUBOOT_USE_TINYCRYPT)
+ #if defined(MCUBOOT_USE_OCRYPTO)
   #include "ocrypto_hmac_sha256.h"
  #endif
 
@@ -193,7 +193,7 @@ static inline int bootutil_hmac_sha256_finish (bootutil_hmac_sha256_context * ct
     return 0;
 }
 
- #endif                                /* MCUBOOT_USE_TINYCRYPT */
+ #endif                                /* MCUBOOT_USE_OCRYPTO */
 
  #ifdef __cplusplus
 }
