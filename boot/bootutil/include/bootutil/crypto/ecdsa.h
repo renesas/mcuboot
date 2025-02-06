@@ -292,7 +292,58 @@ static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
 #endif /* MCUBOOT_USE_CC310 */
 
 #if defined(MCUBOOT_USE_OCRYPTO)
-typedef uintptr_t bootutil_ecdsa_context;
+#ifndef MCUBOOT_ECDSA_NEED_ASN1_SIG
+/*
+ * cp points to ASN1 string containing an integer.
+ * Verify the tag, and that the length is 32 bytes. Helper function.
+ */
+static int bootutil_read_bigint(uint8_t i[NUM_ECC_BYTES], uint8_t **cp, uint8_t *end)
+{
+    size_t len;
+
+    if (mbedtls_asn1_get_tag(cp, end, &len, MBEDTLS_ASN1_INTEGER)) {
+        return -3;
+    }
+
+    if (len >= NUM_ECC_BYTES) {
+        memcpy(i, *cp + len - NUM_ECC_BYTES, NUM_ECC_BYTES);
+    } else {
+        memset(i, 0, NUM_ECC_BYTES - len);
+        memcpy(i + NUM_ECC_BYTES - len, *cp, len);
+    }
+    *cp += len;
+    return 0;
+}
+
+/*
+ * Read in signature. Signature has r and s encoded as integers. Helper function.
+ */
+static int bootutil_decode_sig(uint8_t signature[NUM_ECC_BYTES * 2], uint8_t *cp, uint8_t *end)
+{
+    int rc;
+    size_t len;
+
+    rc = mbedtls_asn1_get_tag(&cp, end, &len,
+                              MBEDTLS_ASN1_CONSTRUCTED | MBEDTLS_ASN1_SEQUENCE);
+    if (rc) {
+        return -1;
+    }
+    if (cp + len > end) {
+        return -2;
+    }
+
+    rc = bootutil_read_bigint(signature, &cp, end);
+    if (rc) {
+        return -3;
+    }
+    rc = bootutil_read_bigint(signature + NUM_ECC_BYTES, &cp, end);
+    if (rc) {
+        return -4;
+    }
+    return 0;
+}
+#endif /* not MCUBOOT_ECDSA_NEED_ASN1_SIG */
+
 typedef uintptr_t bootutil_ecdsa_context;
 static inline void bootutil_ecdsa_init(bootutil_ecdsa_context *ctx)
 {
@@ -314,7 +365,19 @@ static inline int bootutil_ecdsa_verify(bootutil_ecdsa_context *ctx,
     (void)hash_len;
     (void)sig_len;
 
-    return ocrypto_ecdsa_p256_verify(sig, hash, BOOTUTIL_CRYPTO_ECDSA_P256_HASH_SIZE, pk);
+    uint8_t signature[2 * NUM_ECC_BYTES];
+    int rc = bootutil_decode_sig(signature, sig, sig + sig_len);
+    if (rc) {
+        return -1;
+    }
+
+    /* Only support uncompressed keys. */
+    if (pk[0] != 0x04) {
+        return -1;
+    }
+    pk++;
+
+    return ocrypto_ecdsa_p256_verify_hash(signature, hash, pk);
 }
 
 static inline int bootutil_ecdsa_parse_public_key(bootutil_ecdsa_context *ctx,
