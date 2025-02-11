@@ -172,7 +172,21 @@ static inline int bootutil_ecdh_p256_shared_secret(bootutil_ecdh_p256_context *c
     int rc;
     (void)ctx;
 
-    rc = ocrypto_ecdh_p256_common_secret(z, sk, pk);
+    if (pk[0] != 0x04) {
+        return -1;
+    }
+
+    rc = ocrypto_ecdh_p256_public_key_check(&pk[1]);
+    if (rc != 0) {
+        return -1;
+    }
+
+    rc = ocrypto_ecdh_p256_secret_key_check(sk);
+    if (rc != 0) {
+        return -1;
+    }
+
+    rc = ocrypto_ecdh_p256_common_secret(z, sk, &pk[1]);
     if (rc != 0) {
         return -1;
     }
