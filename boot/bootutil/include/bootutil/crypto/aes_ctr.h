@@ -158,13 +158,15 @@ static inline int bootutil_aes_ctr_set_key(bootutil_aes_ctr_context *ctx, const 
 
 static inline int bootutil_aes_ctr_encrypt(bootutil_aes_ctr_context *ctx, uint8_t *counter, const uint8_t *m, uint32_t mlen, size_t blk_off, uint8_t *c)
 {
-    ocrypto_aes_ctr_encrypt(m, c, mlen, ctx->xkey, ctx->key_size, NULL);
+    ocrypto_aes_ctr_init(ctx, NULL, BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE, counter);
+    ocrypto_aes_ctr_update(ctx, c, m, mlen);
     return 0;
 }
 
 static inline int bootutil_aes_ctr_decrypt(bootutil_aes_ctr_context *ctx, uint8_t *counter, const uint8_t *c, uint32_t clen, size_t blk_off, uint8_t *m)
 {
-    ocrypto_aes_ctr_encrypt(c, m, clen, ctx->xkey, ctx->key_size, NULL);
+    ocrypto_aes_ctr_init(ctx, NULL, BOOTUTIL_CRYPTO_AES_CTR_KEY_SIZE, counter);
+    ocrypto_aes_ctr_update(ctx, m, c, clen);
     return 0;
 }
 
