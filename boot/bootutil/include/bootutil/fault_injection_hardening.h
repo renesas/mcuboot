@@ -151,7 +151,7 @@ void fih_panic_loop(void);
 #ifdef FIH_ENABLE_DELAY
 
 /* Delaying logic, with randomness from a CSPRNG */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_delay)
 int fih_delay(void)
 {
     unsigned char delay;
@@ -174,13 +174,13 @@ int fih_delay(void)
 
 #else
 
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_delay_init)
 int fih_delay_init(void)
 {
     return 1;
 }
 
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_delay)
 int fih_delay(void)
 {
     return 1;
@@ -189,7 +189,7 @@ int fih_delay(void)
 
 #ifdef FIH_ENABLE_DOUBLE_VARS
 
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_validate)
 void fih_int_validate(fih_int x)
 {
     if (x.val != (x.msk ^ _fih_mask)) {
@@ -198,7 +198,7 @@ void fih_int_validate(fih_int x)
 }
 
 /* Convert a fih_int to an int. Validate for tampering. */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_decode)
 int fih_int_decode(fih_int x)
 {
     fih_int_validate(x);
@@ -206,7 +206,7 @@ int fih_int_decode(fih_int x)
 }
 
 /* Convert an int to a fih_int, can be used to encode specific error codes. */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_encode)
 fih_int fih_int_encode(int x)
 {
     fih_int ret = {x, x ^ _fih_mask};
@@ -221,7 +221,7 @@ fih_int fih_int_encode(int x)
 #else
 
 /* NOOP */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_validate)
 void fih_int_validate(fih_int x)
 {
     (void) x;
@@ -229,14 +229,14 @@ void fih_int_validate(fih_int x)
 }
 
 /* NOOP */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_decode)
 int fih_int_decode(fih_int x)
 {
     return x;
 }
 
 /* NOOP */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_int_encode)
 fih_int fih_int_encode(int x)
 {
     return x;
@@ -255,7 +255,7 @@ fih_int fih_int_encode(int x)
  * errors. This function converts 0 to FIH_SUCCESS and any other number to a
  * value that is not FIH_SUCCESS
  */
-__attribute__((always_inline)) inline
+R_BSP_PRAGMA_STATIC_INLINE(fih_ret_encode_zero_equality)
 fih_ret fih_ret_encode_zero_equality(int x)
 {
     if (x) {
@@ -278,6 +278,8 @@ void fih_cfi_decrement(void);
  */
 #if defined(__ICCARM__)
 #define FIH_LABEL(str, lin, cnt) __asm volatile ("FIH_LABEL_" str "_" #lin "_" #cnt "::" ::);
+#elif defined(__CCRX__)
+#define FIH_LABEL(str)
 #else
 #define FIH_LABEL(str) __asm volatile ("FIH_LABEL_" str "_%=:" ::);
 #endif

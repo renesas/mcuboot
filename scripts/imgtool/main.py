@@ -94,6 +94,11 @@ def load_key(keyfile):
     passwd = getpass.getpass("Enter key passphrase: ").encode('utf-8')
     return keys.load(keyfile, passwd)
 
+def load_bin(binfile):
+    data = None
+    with open(binfile, 'rb') as f:
+        data = f.read()
+    return data
 
 def get_password():
     while True:
@@ -403,6 +408,11 @@ class BasedIntParamType(click.ParamType):
               help='send to OUTFILE the payload or payload''s digest instead '
               'of complied image. These data can be used for external image '
               'signing')
+@click.option('--encrypted-rx', metavar='filename',
+              help='Encrypt image using the provided AES key. '
+                   '(Not supported in direct-xip or ram-load mode.)')
+@click.option('--wrapped-enckey', metavar='filename',
+              help='Add th proviced wrapped key to the MCUboot trailer.')
 @click.command(help='''Create a signed or unsigned image\n
                INFILE and OUTFILE are parsed as Intel HEX if the params have
                .hex extension, otherwise binary format is used''')
@@ -411,7 +421,7 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
          endian, encrypt_keylen, encrypt, infile, outfile, dependencies,
          load_addr, hex_addr, erased_val, save_enctlv, security_counter,
          boot_record, custom_tlv, rom_fixed, max_align, clear, fix_sig,
-         fix_sig_pubkey, sig_out, vector_to_sign):
+         fix_sig_pubkey, sig_out, vector_to_sign, encrypted_rx, wrapped_enckey):
 
     if confirm:
         # Confirmed but non-padded images don't make much sense, because
@@ -427,6 +437,8 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
     img.load(infile)
     key = load_key(key) if key else None
     enckey = load_key(encrypt) if encrypt else None
+    kw_enckey = load_bin(encrypted_rx) if encrypted_rx else None
+    kw_wrappedkey = load_bin(wrapped_enckey) if wrapped_enckey else None
     if enckey and key:
         if ((isinstance(key, keys.ECDSA256P1) and
              not isinstance(enckey, keys.ECDSA256P1Public))
@@ -438,6 +450,14 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
             raise click.UsageError("Signing and encryption must use the same "
                                    "type of key")
 
+    if kw_enckey or kw_wrappedkey:
+        if kw_enckey is None or kw_wrappedkey is None:
+            raise click.UsageError("--encrypted_rx and --wrapped_enckey must be set when "
+            "using the key wrap encryption function")
+
+    if enckey and kw_enckey:
+        raise click.UsageError("--encrypt and --encrypted_rx can't be set at the same time.")
+    
     if pad_sig and hasattr(key, 'pad_sig'):
         key.pad_sig = True
 
@@ -478,7 +498,7 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
 
     img.create(key, public_key_format, enckey, dependencies, boot_record,
                custom_tlvs, int(encrypt_keylen), clear, baked_signature,
-               pub_key, vector_to_sign)
+               pub_key, vector_to_sign, kw_enckey, kw_wrappedkey)
     img.save(outfile, hex_addr)
 
     if sig_out is not None:

@@ -1224,7 +1224,11 @@ boot_copy_region(struct boot_loader_state *state,
     uint8_t image_index;
 #endif
 
+#if defined(__CCRX__)
+    TARGET_STATIC uint8_t buf[BUF_SZ];
+#else
     TARGET_STATIC uint8_t buf[BUF_SZ] __attribute__((aligned(4)));
+#endif
 
 #if !defined(MCUBOOT_ENC_IMAGES)
     (void)state;

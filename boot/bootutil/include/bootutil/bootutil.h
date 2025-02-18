@@ -42,7 +42,9 @@ extern "C" {
 #define BOOT_IMAGE_NUMBER          1
 #endif
 
+#if defined(__GNUC__) || defined(__IICRX__)
 _Static_assert(BOOT_IMAGE_NUMBER > 0, "Invalid value for BOOT_IMAGE_NUMBER");
+#endif
 
 struct image_header;
 /**

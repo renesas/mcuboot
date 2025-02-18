@@ -37,7 +37,11 @@ extern "C" {
 #endif
 
 #ifndef __packed
+#if defined(__CCRX__)
+#define __packed
+#else
 #define __packed __attribute__((__packed__))
+#endif
 #endif
 
 struct flash_area;
@@ -113,12 +117,18 @@ struct flash_area;
 					    */
 #define IMAGE_TLV_ANY               0xffff /* Used to iterate over all TLV */
 
+#if defined(__CCRX__)
+#pragma pack
+#endif
 struct image_version {
     uint8_t iv_major;
     uint8_t iv_minor;
     uint16_t iv_revision;
     uint32_t iv_build_num;
 } __packed;
+#if defined(__CCRX__)
+#pragma packoption
+#endif
 
 struct image_dependency {
     uint8_t image_id;                       /* Image index (from 0) */
@@ -131,6 +141,9 @@ struct image_dependency {
 };
 
 /** Image header.  All fields are in little endian byte order. */
+#if defined(__CCRX__)
+#pragma pack
+#endif
 struct image_header {
     uint32_t ih_magic;
     uint32_t ih_load_addr;
@@ -141,18 +154,33 @@ struct image_header {
     struct image_version ih_ver;
     uint32_t _pad1;
 } __packed;
+#if defined(__CCRX__)
+#pragma packoption
+#endif
 
 /** Image TLV header.  All fields in little endian. */
+#if defined(__CCRX__)
+#pragma pack
+#endif
 struct image_tlv_info {
     uint16_t it_magic;
     uint16_t it_tlv_tot;  /* size of TLV area (including tlv_info header) */
 } __packed;
+#if defined(__CCRX__)
+#pragma packoption
+#endif
 
 /** Image trailer TLV format. All fields in little endian. */
+#if defined(__CCRX__)
+#pragma pack
+#endif
 struct image_tlv {
     uint16_t it_type;   /* IMAGE_TLV_[...]. */
     uint16_t it_len;    /* Data length (not including TLV header). */
 } __packed;
+#if defined(__CCRX__)
+#pragma packoption
+#endif
 
 #define ENCRYPTIONFLAGS (IMAGE_F_ENCRYPTED_AES128 | IMAGE_F_ENCRYPTED_AES256)
 #define IS_ENCRYPTED(hdr) (((hdr)->ih_flags & IMAGE_F_ENCRYPTED_AES128) \
@@ -160,8 +188,10 @@ struct image_tlv {
 #define MUST_DECRYPT(fap, idx, hdr) \
     (flash_area_get_id(fap) == FLASH_AREA_IMAGE_SECONDARY(idx) && IS_ENCRYPTED(hdr))
 
+#if defined(__GNUC__) || defined(__IICRX__)
 _Static_assert(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
                "struct image_header not required size");
+#endif
 
 struct enc_key_data;
 fih_ret bootutil_img_validate(struct enc_key_data *enc_state, int image_index,

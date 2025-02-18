@@ -162,7 +162,9 @@ extern const union boot_img_magic_t boot_img_magic;
 #define BOOT_IMG_ALIGN  (boot_img_magic.val_s.align)
 #endif
 
+#if defined(__GNUC__) || defined(__IICRX__)
 _Static_assert(sizeof(boot_img_magic) == BOOT_MAGIC_SZ, "Invalid size for image magic");
+#endif
 
 #if !defined(MCUBOOT_DIRECT_XIP) && !defined(MCUBOOT_RAM_LOAD)
 #define ARE_SLOTS_EQUIVALENT()    0

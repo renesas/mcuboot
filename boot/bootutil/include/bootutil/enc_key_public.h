@@ -42,7 +42,13 @@ extern "C" {
 #define BOOT_ENC_KEY_SIZE       16
 #endif
 
+#if defined(MCUBOOT_USE_TSIP)
+#define BOOT_ENC_KEY_ALIGN_SIZE ALIGN_UP(sizeof(tsip_aes_key_index_t), BOOT_MAX_ALIGN)
+#elif defined(MCUBOOT_USE_RSIP)
+#define BOOT_ENC_KEY_ALIGN_SIZE ALIGN_UP(RSIP_BYTE_SIZE_WRAPPED_KEY_AES_256, BOOT_MAX_ALIGN)
+#else
 #define BOOT_ENC_KEY_ALIGN_SIZE ALIGN_UP(BOOT_ENC_KEY_SIZE, BOOT_MAX_ALIGN)
+#endif
 
 #define TLV_ENC_RSA_SZ    256
 #define TLV_ENC_KW_SZ     (BOOT_ENC_KEY_SIZE + 8)

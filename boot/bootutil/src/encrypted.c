@@ -18,7 +18,13 @@
 #endif
 
 #if defined(MCUBOOT_ENCRYPT_KW)
-#include "bootutil/crypto/aes_kw.h"
+#if defined(MCUBOOT_USE_TSIP)
+#include "tsip_aes_kw.h"
+#elif defined(MCUBOOT_USE_RSIP)
+#include "rsip_aes_kw.h"
+#else
+#include "aes_kw.h"
+#endif
 #endif
 
 #if defined(MCUBOOT_ENCRYPT_EC256)
@@ -465,8 +471,13 @@ boot_enc_decrypt(const uint8_t *buf, uint8_t *enckey)
 #endif /* defined(MCUBOOT_ENCRYPT_RSA) */
 
 #if defined(MCUBOOT_ENCRYPT_KW)
-
+#if defined(MCUBOOT_USE_TSIP)
+    assert(*bootutil_enc_key.len == sizeof(tsip_aes_key_index_t));
+#elif defined(MCUBOOT_USE_RSIP)
+    assert(*bootutil_enc_key.len == RSIP_BYTE_SIZE_WRAPPED_KEY_AES_256);
+#else
     assert(*bootutil_enc_key.len == BOOT_ENC_KEY_SIZE);
+#endif
     rc = key_unwrap(buf, enckey);
 
 #endif /* defined(MCUBOOT_ENCRYPT_KW) */

@@ -317,8 +317,10 @@ class Image():
 
     def create(self, key, public_key_format, enckey, dependencies=None,
                sw_type=None, custom_tlvs=None, encrypt_keylen=128, clear=False,
-               fixed_sig=None, pub_key=None, vector_to_sign=None):
+               fixed_sig=None, pub_key=None, vector_to_sign=None, kw_enckey=None, kw_wrappedkey=None):
         self.enckey = enckey
+        self.kw_enckey = kw_enckey
+        enc_flag = None
 
         # Check what hashing algorithm should be used
         if (key is not None and isinstance(key, ecdsa.ECDSA384P1) or
@@ -396,7 +398,8 @@ class Image():
         #
         # This adds the padding if image is not aligned to the 16 Bytes
         # in encrypted mode
-        if self.enckey is not None:
+        if self.enckey is not None or self.kw_enckey is not None:
+            enc_flag = True
             pad_len = len(self.payload) % 16
             if pad_len > 0:
                 pad = bytes(16 - pad_len)
@@ -407,9 +410,9 @@ class Image():
 
         # This adds the header to the payload as well
         if encrypt_keylen == 256:
-            self.add_header(enckey, protected_tlv_size, 256)
+            self.add_header(enc_flag, protected_tlv_size, 256)
         else:
-            self.add_header(enckey, protected_tlv_size)
+            self.add_header(enc_flag, protected_tlv_size)
 
         prot_tlv = TLV(self.endian, TLV_PROT_INFO_MAGIC)
 
@@ -495,38 +498,44 @@ class Image():
         if protected_tlv_off is not None:
             self.payload = self.payload[:protected_tlv_off]
 
-        if enckey is not None:
-            if encrypt_keylen == 256:
-                plainkey = os.urandom(32)
-            else:
-                plainkey = os.urandom(16)
-
-            if isinstance(enckey, rsa.RSAPublic):
-                cipherkey = enckey._get_public().encrypt(
-                    plainkey, padding.OAEP(
-                        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                        algorithm=hashes.SHA256(),
-                        label=None))
-                self.enctlv_len = len(cipherkey)
-                tlv.add('ENCRSA2048', cipherkey)
-            elif isinstance(enckey, (ecdsa.ECDSA256P1Public,
-                                     x25519.X25519Public)):
-                cipherkey, mac, pubk = self.ecies_hkdf(enckey, plainkey)
-                enctlv = pubk + mac + cipherkey
-                self.enctlv_len = len(enctlv)
-                if isinstance(enckey, ecdsa.ECDSA256P1Public):
-                    tlv.add('ENCEC256', enctlv)
+        if enc_flag is not None:
+            if enckey is not None:
+                if encrypt_keylen == 256:
+                    plainkey = os.urandom(32)
                 else:
-                    tlv.add('ENCX25519', enctlv)
+                    plainkey = os.urandom(16)
 
-            if not clear:
-                nonce = bytes([0] * 16)
-                cipher = Cipher(algorithms.AES(plainkey), modes.CTR(nonce),
-                                backend=default_backend())
-                encryptor = cipher.encryptor()
-                img = bytes(self.payload[self.header_size:])
-                self.payload[self.header_size:] = \
-                    encryptor.update(img) + encryptor.finalize()
+                if isinstance(enckey, rsa.RSAPublic):
+                    cipherkey = enckey._get_public().encrypt(
+                        plainkey, padding.OAEP(
+                            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                            algorithm=hashes.SHA256(),
+                            label=None))
+                    self.enctlv_len = len(cipherkey)
+                    tlv.add('ENCRSA2048', cipherkey)
+                elif isinstance(enckey, (ecdsa.ECDSA256P1Public,
+                                         x25519.X25519Public)):
+                    cipherkey, mac, pubk = self.ecies_hkdf(enckey, plainkey)
+                    enctlv = pubk + mac + cipherkey
+                    self.enctlv_len = len(enctlv)
+                    if isinstance(enckey, ecdsa.ECDSA256P1Public):
+                        tlv.add('ENCEC256', enctlv)
+                    else:
+                        tlv.add('ENCX25519', enctlv)
+            elif kw_enckey is not None:
+                plainkey = kw_enckey
+                cipherkey = kw_wrappedkey
+                self.enctlv_len = len(cipherkey)
+                tlv.add('ENCKW', cipherkey)
+
+                if not clear:
+                    nonce = bytes([0] * 16)
+                    cipher = Cipher(algorithms.AES(plainkey), modes.CTR(nonce),
+                                    backend=default_backend())
+                    encryptor = cipher.encryptor()
+                    img = bytes(self.payload[self.header_size:])
+                    self.payload[self.header_size:] = \
+                        encryptor.update(img) + encryptor.finalize()
 
         self.payload += prot_tlv.get()
         self.payload += tlv.get()

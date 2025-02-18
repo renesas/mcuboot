@@ -30,10 +30,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <flash_map_backend/flash_map_backend.h>
-#include "bootutil/crypto/aes_ctr.h"
 #include "bootutil/image.h"
 #include "bootutil/enc_key_public.h"
 #include "bootutil/bootutil.h"
+#if defined(MCUBOOT_USE_TSIP)
+#include "tsip_aes_ctr.h"
+#elif defined(MCUBOOT_USE_RSIP)
+#include "rsip_aes_ctr.h"
+#else
+#include "aes_ctr.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
