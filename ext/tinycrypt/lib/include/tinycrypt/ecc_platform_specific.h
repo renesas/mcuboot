@@ -58,6 +58,8 @@
 #ifndef __UECC_PLATFORM_SPECIFIC_H_
 #define __UECC_PLATFORM_SPECIFIC_H_
 
+#include "bsp_api.h"
+
 /*
  * The RNG function should fill 'size' random bytes into 'dest'. It should
  * return 1 if 'dest' was filled with random data, or 0 if the random data could
@@ -76,6 +78,6 @@
 */
 #define default_RNG_defined 1
 
-int default_CSPRNG(uint8_t *dest, unsigned int size);
+int default_CSPRNG(uint8_t *dest, unsigned int size) BSP_WEAK_REFERENCE;
 
 #endif /* __UECC_PLATFORM_SPECIFIC_H_ */
