@@ -70,6 +70,7 @@ keygens = {
     'ecdsa-p384': gen_ecdsa_p384,
     'ed25519':    gen_ed25519,
     'x25519':     gen_x25519,
+    'mldsa-44':   gen_mldsa_44,
 }
 valid_formats = ['openssl', 'pkcs8']
 
