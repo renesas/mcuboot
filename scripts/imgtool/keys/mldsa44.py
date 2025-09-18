@@ -163,7 +163,7 @@ class Mldsa44(Mldsa44Public):
 # Remove old keys
 rm mykey.pem
 
-# Generate new key with enhanced format
+# Generate new key with enhanced format (usese 16-byte seed from os.random())
 python imgtool.py keygen -t mldsa-44 -k mykey.pem
 
 # Check file size (should be 3844 bytes now since both public and private keys are present)
@@ -175,7 +175,7 @@ python imgtool.py getpub -k mykey.pem -e raw -o pubkey.bin
 # Check public key size (should be 1312 bytes)
 ls -la pubkey.bin
 
-# Test signing
+# Test signing (2420-byte packed signatures)
 python imgtool.py sign -k mykey.pem --version 2.0.0+0 --header-size 0x80 --align 128 --max-align 128 --slot-size 0x8000 --max-sectors 1 --overwrite-only --pad-header input.bin output.bin
 
 # Test verification. Not sure if we should change this to accept public key... that may be not necessary since that happens on the MCU
