@@ -35,6 +35,7 @@ from .ecdsa import (ECDSA256P1, ECDSA256P1Public,
                     ECDSA384P1, ECDSA384P1Public, ECDSAUsageError)
 from .ed25519 import Ed25519, Ed25519Public, Ed25519UsageError
 from .x25519 import X25519, X25519Public, X25519UsageError
+from .mldsa44 import Mldsa44, Mldsa44Public, Mldsa44UsageError
 
 
 class PasswordRequired(Exception):
