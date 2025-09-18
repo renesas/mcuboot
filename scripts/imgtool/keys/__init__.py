@@ -112,3 +112,30 @@ def load(path, passwd=None):
         return X25519Public(pk)
     else:
         raise Exception("Unknown key type: " + str(type(pk)))
+
+
+
+#This is WIP!!
+
+def load_mldsa44_key(key_data):
+    """Load MLDSA44 key from raw bytes"""
+    from dilithium import Dilithium, DEFAULT_PARAMETERS
+    
+    # For MLDSA44, we need to extract public key from private key
+    dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
+    
+    # Generate a dummy keypair to get the structure, then replace with our data
+    # This is a workaround since we only have private key bytes
+    dummy_seed = b'\x00' * 16
+    dummy_public, dummy_private = dilithium_instance.keygen(dummy_seed)
+    
+    # Now we need to extract the public key from the private key
+    # This might require understanding the private key format or 
+    # using dilithium's internal methods
+    
+    # For now, return an MLDSA44 object (you'll need to implement proper key extraction)
+    from .mldsa44 import Mldsa44
+    # This is incomplete - you need to properly extract public key from private key bytes
+    # return Mldsa44(key_data, extracted_public_key)
+    
+    raise NotImplementedError("MLDSA44 key loading not fully implemented yet")
