@@ -64,27 +64,30 @@ def load(path, passwd=None):
       Returns None if the password wasn't specified."""
     with open(path, 'rb') as f:
         raw_pem = f.read()
+    
     try:
-        # MLDSA44 private key is 2528 bytes
-        if len(raw_pem) == 2528:
-            # Load as MLDSA44 private key
-            # We'll need to extract the public key from the private key
-            from .mldsa44 import Mldsa44
-            # This requires implementing a way to get public key from private key bytes
+        # Check for MLDSA44 format: 4 + 2528 + 1312 = 3844 bytes
+        if len(raw_pem) == 3844:
             return load_mldsa44_key(raw_pem)
-
+        
+        # Check for old raw MLDSA44 format (unsupported)
+        if len(raw_pem) == 2528:
+            raise ValueError("Old MLDSA44 format detected. Please regenerate your key with the new format.")
+            
+        # Continue with existing PEM/DER loading for other key types
         pk = serialization.load_pem_private_key(
                 raw_pem,
                 password=passwd,
                 backend=default_backend())
-    # Unfortunately, the crypto library raises unhelpful exceptions,
-    # so we have to look at the text.
     except TypeError as e:
         msg = str(e)
         if "private key is encrypted" in msg:
             return None
         raise e
-    except ValueError:
+    except ValueError as e:
+        # Check if it's our MLDSA44 error or a cryptography error
+        if "MLDSA44" in str(e):
+            raise e
         # This seems to happen if the key is a public key, let's try
         # loading it as a public key.
         pk = serialization.load_pem_public_key(
@@ -133,24 +136,32 @@ def load(path, passwd=None):
 #This is WIP!!
 
 def load_mldsa44_key(key_data):
-    """Load MLDSA44 key from raw bytes"""
-    from dilithium import Dilithium, DEFAULT_PARAMETERS
+    """Load MLDSA44 key from custom format: 4-byte length + private_key + public_key"""
+    import struct
     
-    # For MLDSA44, we need to extract public key from private key
-    dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
+    # Validate minimum size
+    if len(key_data) < 4:
+        raise ValueError("Invalid MLDSA44 key file: too short")
     
-    # Generate a dummy keypair to get the structure, then replace with our data
-    # This is a workaround since we only have private key bytes
-    dummy_seed = b'\x00' * 16
-    dummy_public, dummy_private = dilithium_instance.keygen(dummy_seed)
+    # Read the private key length from first 4 bytes
+    priv_len = struct.unpack('<I', key_data[:4])[0]
     
-    # Now we need to extract the public key from the private key
-    # This might require understanding the private key format or 
-    # using dilithium's internal methods
+    # Validate expected lengths
+    expected_total = 4 + priv_len + 1312  # header + private + public
+    if len(key_data) != expected_total:
+        raise ValueError(f"Invalid MLDSA44 key file: expected {expected_total} bytes, got {len(key_data)}")
     
-    # For now, return an MLDSA44 object (you'll need to implement proper key extraction)
+    # Validate private key length
+    if priv_len != 2528:
+        raise ValueError(f"Invalid MLDSA44 private key length: expected 2528, got {priv_len}")
+    
+    # Extract keys
+    private_key_bytes = key_data[4:4+priv_len]
+    public_key_bytes = key_data[4+priv_len:]
+    
+    # Validate public key length
+    if len(public_key_bytes) != 1312:
+        raise ValueError(f"Invalid MLDSA44 public key length: expected 1312, got {len(public_key_bytes)}")
+    
     from .mldsa44 import Mldsa44
-    # This is incomplete - you need to properly extract public key from private key bytes
-    # return Mldsa44(key_data, extracted_public_key)
-    
-    raise NotImplementedError("MLDSA44 key loading not fully implemented yet")
+    return Mldsa44(private_key_bytes, public_key_bytes)
