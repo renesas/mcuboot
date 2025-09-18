@@ -122,26 +122,26 @@ class Mldsa44(Mldsa44Public):
         else:
             raise Mldsa44UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
 
-def export_private(self, path, passwd=None):
+    def export_private(self, path, passwd=None):
 
-    """ Write the private key to the given file with both private and public key data.
-    Format: 4 bytes length + private key + public key
-    Total size: 4 + 2528 + 1312 = 3844 bytes
-    """
-    if passwd is not None:
-        raise Mldsa44UsageError("Password protection not supported for raw dilithium keys")
-    
-    try:
-        with open(path, 'wb') as f:
-            import struct
-            # Write header: private_key_length (4 bytes little-endian)
-            f.write(struct.pack('<I', len(self.private_key_bytes)))
-            # Write private key bytes
-            f.write(self.private_key_bytes)
-            # Write public key bytes
-            f.write(self.public_key_bytes)
-    except OSError as e:
-        raise Mldsa44UsageError(f"Failed to write private key to {path}: {e}")
+        """ Write the private key to the given file with both private and public key data.
+        Format: 4 bytes length + private key + public key
+        Total size: 4 + 2528 + 1312 = 3844 bytes
+        """
+        if passwd is not None:
+            raise Mldsa44UsageError("Password protection not supported for raw dilithium keys")
+        
+        try:
+            with open(path, 'wb') as f:
+                import struct
+                # Write header: private_key_length (4 bytes little-endian)
+                f.write(struct.pack('<I', len(self.private_key_bytes)))
+                # Write private key bytes
+                f.write(self.private_key_bytes)
+                # Write public key bytes
+                f.write(self.public_key_bytes)
+        except OSError as e:
+            raise Mldsa44UsageError(f"Failed to write private key to {path}: {e}")
 
     def sign_digest(self, digest):
         """Return the actual signature"""
