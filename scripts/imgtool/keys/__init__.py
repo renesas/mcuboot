@@ -50,6 +50,14 @@ def load(path, passwd=None):
     with open(path, 'rb') as f:
         raw_pem = f.read()
     try:
+        # MLDSA44 private key is 2528 bytes
+        if len(raw_pem) == 2528:
+            # Load as MLDSA44 private key
+            # We'll need to extract the public key from the private key
+            from .mldsa44 import Mldsa44
+            # This requires implementing a way to get public key from private key bytes
+            return load_mldsa44_key(raw_pem)
+
         pk = serialization.load_pem_private_key(
                 raw_pem,
                 password=passwd,
