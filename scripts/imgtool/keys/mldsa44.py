@@ -122,9 +122,9 @@ class Mldsa44(Mldsa44Public):
         else:
             raise Mldsa44UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
 
-    def export_private(self, path, passwd=None):
-    """
-    Write the private key to the given file with both private and public key data.
+def export_private(self, path, passwd=None):
+
+    """ Write the private key to the given file with both private and public key data.
     Format: 4 bytes length + private key + public key
     Total size: 4 + 2528 + 1312 = 3844 bytes
     """
