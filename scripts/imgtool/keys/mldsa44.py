@@ -4,7 +4,7 @@ MLDSA44 key management
 
 # SPDX-License-Identifier: Apache-2.0
 
-import dilithium
+from dilithium import Dilithium2  # Use the correct import
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
@@ -20,7 +20,7 @@ class Mldsa44Public(KeyClass):
         """Initialize with raw public key bytes from dilithium"""
         if not isinstance(public_key_bytes, bytes):
             raise Mldsa44UsageError("Public key must be bytes")
-        if len(public_key_bytes) != 1312:  # MLDSA44 public key size
+        if len(public_key_bytes) != 1312:  # MLDSA44/Dilithium2 public key size
             raise Mldsa44UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes")
         self.public_key_bytes = public_key_bytes
 
@@ -34,7 +34,7 @@ class Mldsa44Public(KeyClass):
         return self.public_key_bytes
 
     def get_public_bytes(self):
-        """Return raw public key bytes (dilithium doesn't use DER/PEM by default)"""
+        """Return raw public key bytes"""
         return self.public_key_bytes
 
     def get_private_bytes(self, minimal, format):
@@ -58,13 +58,14 @@ class Mldsa44Public(KeyClass):
         return "MLDSA44"
 
     def sig_len(self):
-        return 2420  # MLDSA44 signature length
+        return 2420  # MLDSA44/Dilithium2 signature length
 
     def verify_digest(self, signature, digest):
         """Verify that signature is valid for given digest"""
         try:
-            # dilithium.verify returns True/False
-            return dilithium.verify(signature, digest, self.public_key_bytes)
+            # Use Dilithium2 class for verification
+            dilithium_instance = Dilithium2()
+            return dilithium_instance.verify(signature, digest, self.public_key_bytes)
         except Exception:
             return False
 
@@ -81,7 +82,7 @@ class Mldsa44(Mldsa44Public):
         """Initialize with raw private and public key bytes from dilithium"""
         if not isinstance(private_key_bytes, bytes):
             raise Mldsa44UsageError("Private key must be bytes")
-        if len(private_key_bytes) != 2560:  # MLDSA44 private key size
+        if len(private_key_bytes) != 2560:  # MLDSA44/Dilithium2 private key size
             raise Mldsa44UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes")
         
         super().__init__(public_key_bytes)
@@ -89,8 +90,9 @@ class Mldsa44(Mldsa44Public):
 
     @staticmethod
     def generate():
-        """Generate a new MLDSA44 key pair"""
-        public_key, private_key = dilithium.keypair()
+        """Generate a new MLDSA44 key pair using Dilithium2"""
+        dilithium_instance = Dilithium2()
+        public_key, private_key = dilithium_instance.keygen()
         return Mldsa44(private_key, public_key)
 
     def _get_public(self):
@@ -119,4 +121,5 @@ class Mldsa44(Mldsa44Public):
 
     def sign_digest(self, digest):
         """Return the actual signature"""
-        return dilithium.sign(digest, self.private_key_bytes)
+        dilithium_instance = Dilithium2()
+        return dilithium_instance.sign(digest, self.private_key_bytes)
