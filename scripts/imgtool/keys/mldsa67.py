@@ -1,34 +1,35 @@
 """
-MLDSA44 key management
+MLDSA67 key management
 """
 
 # SPDX-License-Identifier: Apache-2.0
 
-from dilithium import Dilithium  # Use the correct import
+import os
+from dilithium import Dilithium, DEFAULT_PARAMETERS
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from .general import KeyClass
 
 
-class Mldsa44UsageError(Exception):
+class Mldsa67UsageError(Exception):
     pass
 
 
-class Mldsa44Public(KeyClass):
+class Mldsa67Public(KeyClass):
     def __init__(self, public_key_bytes):
         """Initialize with raw public key bytes from dilithium"""
         if not isinstance(public_key_bytes, bytes):
-            raise Mldsa44UsageError("Public key must be bytes")
-        if len(public_key_bytes) != 1312:  # Actual Dilithium2 public key size
-            raise Mldsa44UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1312")
+            raise Mldsa67UsageError("Public key must be bytes")
+        if len(public_key_bytes) != 1952:  # Dilithium3 public key size
+            raise Mldsa67UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1952")
         self.public_key_bytes = public_key_bytes
 
     def shortname(self):
-        return "mldsa44"
+        return "mldsa67"
 
     def _unsupported(self, name):
-        raise Mldsa44UsageError(f"Operation {name} requires private key")
+        raise Mldsa67UsageError(f"Operation {name} requires private key")
 
     def _get_public(self):
         return self.public_key_bytes
@@ -49,60 +50,53 @@ class Mldsa44Public(KeyClass):
             with open(path, 'wb') as f:
                 f.write(self.public_key_bytes)
         except OSError as e:
-            raise Mldsa44UsageError(f"Failed to write public key to {path}: {e}")
+            raise Mldsa67UsageError(f"Failed to write public key to {path}: {e}")
 
     def sig_type(self):
-        return "MLDSA44"
+        return "MLDSA67"
 
     def sig_tlv(self):
-        return "MLDSA44"
+        return "MLDSA67"
 
     def sig_len(self):
-        return 2420  # Actual Dilithium2/MLDSA44 signature length
+        return 3293  # Dilithium3/MLDSA67 signature length
 
     def verify_digest(self, signature, digest):
         """Verify that signature is valid for given digest"""
         try:
-            # Use Dilithium2 parameter set for MLDSA44
-            from dilithium import DEFAULT_PARAMETERS
-            dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
+            # Use Dilithium3 parameter set for MLDSA67
+            dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
             
-            # Unpack the signature for verification
-            z, h = dilithium_instance._unpack_sig(signature)
-            
-            # Verify with unpacked signature and packed public key
-            # Check parameter order - might be (pk, message, z, h) or similar
-            return dilithium_instance.verify(self.public_key_bytes, digest, z, h)
+            # Verify with packed signature and packed public key
+            return dilithium_instance.verify(self.public_key_bytes, digest, signature)
         except Exception:
             return False
 
 
-class Mldsa44(Mldsa44Public):
+class Mldsa67(Mldsa67Public):
     """
-    Wrapper around an MLDSA44 private key.
+    Wrapper around an MLDSA67 private key.
     
     Provides methods for key generation, signing, and exporting both
     private and public keys in various formats for post-quantum cryptography.
+    Uses Dilithium3 parameter set for higher security than MLDSA44.
     """
 
     def __init__(self, private_key_bytes, public_key_bytes):
         """Initialize with raw private and public key bytes from dilithium"""
         if not isinstance(private_key_bytes, bytes):
-            raise Mldsa44UsageError("Private key must be bytes")
-        if len(private_key_bytes) != 2528:  # Actual Dilithium2 private key size
-            raise Mldsa44UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 2528")
+            raise Mldsa67UsageError("Private key must be bytes")
+        if len(private_key_bytes) != 4000:  # Dilithium3 private key size
+            raise Mldsa67UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 4000")
         
         super().__init__(public_key_bytes)
         self.private_key_bytes = private_key_bytes
 
     @staticmethod
     def generate():
-        """Generate a new MLDSA44 key pair using Dilithium2 parameter set"""
-        import os
-        from dilithium import DEFAULT_PARAMETERS
-        
-        # MLDSA44 corresponds to Dilithium2
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
+        """Generate a new MLDSA67 key pair using Dilithium3 parameter set"""
+        # MLDSA67 corresponds to Dilithium3
+        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
         
         # Generate 16-byte random seed for key generation
         key_seed = os.urandom(16)
@@ -110,7 +104,7 @@ class Mldsa44(Mldsa44Public):
         # Generate key pair with seed
         public_key, private_key = dilithium_instance.keygen(key_seed)
         
-        return Mldsa44(private_key, public_key)
+        return Mldsa67(private_key, public_key)
 
     def _get_public(self):
         return self.public_key_bytes
@@ -120,16 +114,16 @@ class Mldsa44(Mldsa44Public):
         if format == 'raw':
             return self.private_key_bytes
         else:
-            raise Mldsa44UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
+            raise Mldsa67UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
 
     def export_private(self, path, passwd=None):
-
-        """ Write the private key to the given file with both private and public key data.
+        """
+        Write the private key to the given file with both private and public key data.
         Format: 4 bytes length + private key + public key
-        Total size: 4 + 2528 + 1312 = 3844 bytes
+        Total size: 4 + 4000 + 1952 = 5956 bytes
         """
         if passwd is not None:
-            raise Mldsa44UsageError("Password protection not supported for raw dilithium keys")
+            raise Mldsa67UsageError("Password protection not supported for raw dilithium keys")
         
         try:
             with open(path, 'wb') as f:
@@ -141,13 +135,12 @@ class Mldsa44(Mldsa44Public):
                 # Write public key bytes
                 f.write(self.public_key_bytes)
         except OSError as e:
-            raise Mldsa44UsageError(f"Failed to write private key to {path}: {e}")
+            raise Mldsa67UsageError(f"Failed to write private key to {path}: {e}")
 
     def sign_digest(self, digest):
         """Return the actual signature"""
-        from dilithium import DEFAULT_PARAMETERS
-        # MLDSA44 corresponds to Dilithium2
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
+        # MLDSA67 corresponds to Dilithium3
+        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
         
         # Use sign_with_input which returns a packed signature directly
         packed_signature = dilithium_instance.sign_with_input(self.private_key_bytes, digest)
