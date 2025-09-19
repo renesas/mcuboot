@@ -72,8 +72,8 @@ def load(path, passwd=None):
             return load_mldsa44_key(raw_pem)
         
         # Check for MLDSA67 format: 4 + 4000 + 1952 = 5956 bytes
-        if len(raw_data) == 5956:
-            return load_mldsa67_key(raw_data)
+        if len(raw_pem) == 5956:
+            return load_mldsa67_key(raw_pem)
             
         # Continue with existing PEM/DER loading for other key types
         pk = serialization.load_pem_private_key(
