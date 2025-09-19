@@ -28,7 +28,7 @@ from imgtool.version import decode_version
 from imgtool.dumpinfo import dump_imginfo
 from .keys import (
     RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError, 
-    Mldsa44UsageError)
+    Mldsa44UsageError, Mldsa67UsageError)
 
 MIN_PYTHON_VERSION = (3, 6)
 if sys.version_info < MIN_PYTHON_VERSION:
@@ -63,6 +63,9 @@ def gen_x25519(keyfile, passwd):
 def gen_mldsa44(keyfile, passwd):
     keys.Mldsa44.generate().export_private(path=keyfile, passwd=passwd)
 
+def gen_mldsa67(keyfile, passwd):
+    keys.Mldsa67.generate().export_private(path=keyfile, passwd=passwd)
+
 valid_langs = ['c', 'rust']
 valid_hash_encodings = ['lang-c', 'raw']
 valid_encodings = ['lang-c', 'lang-rust', 'pem', 'raw']
@@ -74,6 +77,7 @@ keygens = {
     'ed25519':    gen_ed25519,
     'x25519':     gen_x25519,
     'mldsa-44':   gen_mldsa44,
+    'mldsa-67':   gen_mldsa67,
 }
 valid_formats = ['openssl', 'pkcs8']
 
@@ -209,7 +213,7 @@ def getpriv(key, minimal, format):
     try:
         key.emit_private(minimal, format)
     except (RSAUsageError, ECDSAUsageError, Ed25519UsageError,
-            X25519UsageError, Mldsa44UsageError) as e:
+            X25519UsageError, Mldsa44UsageError, Mldsa67UsageError) as e:
         raise click.UsageError(e)
 
 
