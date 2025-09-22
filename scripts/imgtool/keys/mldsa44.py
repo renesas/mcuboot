@@ -180,4 +180,10 @@ python imgtool.py sign -k mykey.pem --version 2.0.0+0 --header-size 0x80 --align
 
 # Test verification. Not sure if we should change this to accept public key... that may be not necessary since that happens on the MCU
 python imgtool.py verify -k mykey.pem output.bin
+
+# Test public key extraction to a C array
+python imgtool.py getpub -k mykey.pem
+
+# Test private key extraction to a C array (this does not work, but that may be ok since MCUboot firmware does not neet it? It works for other key types so maybe needs to be fixed)
+python imgtool.py getpriv -k mykey.pem
 """
