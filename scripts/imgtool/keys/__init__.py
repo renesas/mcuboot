@@ -65,13 +65,15 @@ def load(path, passwd=None):
                 raw_pem,
                 password=passwd,
                 backend=default_backend())
+    # Unfortunately, the crypto library raises unhelpful exceptions,
+    # so we have to look at the text.
     except TypeError as e:
         msg = str(e)
         if "private key is encrypted" in msg:
             return None
         raise e
     except ValueError as e:
-        # Check if it's our MLDSA44 error or a cryptography error
+        # Check if it's an MLDSA44 error or a cryptography error
         if "MLDSA44" in str(e):
             raise e
         # This seems to happen if the key is a public key, let's try

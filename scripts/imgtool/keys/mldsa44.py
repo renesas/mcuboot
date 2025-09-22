@@ -159,7 +159,7 @@ class Mldsa44(Mldsa44Public):
 
 
 # Debugging Code
-        """
+"""
 # Remove old keys
 rm mykey.pem
 
