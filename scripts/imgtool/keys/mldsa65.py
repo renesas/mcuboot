@@ -1,5 +1,5 @@
 """
-MLDSA67 key management
+MLDSA65 key management
 """
 
 # SPDX-License-Identifier: Apache-2.0
@@ -12,24 +12,24 @@ from cryptography.hazmat.primitives import serialization
 from .general import KeyClass
 
 
-class Mldsa67UsageError(Exception):
+class Mldsa65UsageError(Exception):
     pass
 
 
-class Mldsa67Public(KeyClass):
+class Mldsa65Public(KeyClass):
     def __init__(self, public_key_bytes):
         """Initialize with raw public key bytes from dilithium"""
         if not isinstance(public_key_bytes, bytes):
-            raise Mldsa67UsageError("Public key must be bytes")
+            raise Mldsa65UsageError("Public key must be bytes")
         if len(public_key_bytes) != 1952:  # Dilithium3 public key size
-            raise Mldsa67UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1952")
+            raise Mldsa65UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1952")
         self.public_key_bytes = public_key_bytes
 
     def shortname(self):
-        return "mldsa67"
+        return "mldsa65"
 
     def _unsupported(self, name):
-        raise Mldsa67UsageError(f"Operation {name} requires private key")
+        raise Mldsa65UsageError(f"Operation {name} requires private key")
 
     def _get_public(self):
         return self.public_key_bytes
@@ -50,21 +50,21 @@ class Mldsa67Public(KeyClass):
             with open(path, 'wb') as f:
                 f.write(self.public_key_bytes)
         except OSError as e:
-            raise Mldsa67UsageError(f"Failed to write public key to {path}: {e}")
+            raise Mldsa65UsageError(f"Failed to write public key to {path}: {e}")
 
     def sig_type(self):
-        return "MLDSA67"
+        return "MLDSA65"
 
     def sig_tlv(self):
-        return "MLDSA67"
+        return "MLDSA65"
 
     def sig_len(self):
-        return 3293  # Dilithium3/MLDSA67 signature length
+        return 3293  # Dilithium3/MLDSA65 signature length
 
     def verify_digest(self, signature, digest):
         """Verify that signature is valid for given digest"""
         try:
-            # Use Dilithium3 parameter set for MLDSA67
+            # Use Dilithium3 parameter set for MLDSA65
             dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
             
             # Verify with packed signature and packed public key
@@ -73,9 +73,9 @@ class Mldsa67Public(KeyClass):
             return False
 
 
-class Mldsa67(Mldsa67Public):
+class Mldsa65(Mldsa65Public):
     """
-    Wrapper around an MLDSA67 private key.
+    Wrapper around an MLDSA65 private key.
     
     Provides methods for key generation, signing, and exporting both
     private and public keys in various formats for post-quantum cryptography.
@@ -85,17 +85,17 @@ class Mldsa67(Mldsa67Public):
     def __init__(self, private_key_bytes, public_key_bytes):
         """Initialize with raw private and public key bytes from dilithium"""
         if not isinstance(private_key_bytes, bytes):
-            raise Mldsa67UsageError("Private key must be bytes")
+            raise Mldsa65UsageError("Private key must be bytes")
         if len(private_key_bytes) != 4000:  # Dilithium3 private key size
-            raise Mldsa67UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 4000")
+            raise Mldsa65UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 4000")
         
         super().__init__(public_key_bytes)
         self.private_key_bytes = private_key_bytes
 
     @staticmethod
     def generate():
-        """Generate a new MLDSA67 key pair using Dilithium3 parameter set"""
-        # MLDSA67 corresponds to Dilithium3
+        """Generate a new MLDSA65 key pair using Dilithium3 parameter set"""
+        # MLDSA65 corresponds to Dilithium3
         dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
         
         # Generate 16-byte random seed for key generation
@@ -104,7 +104,7 @@ class Mldsa67(Mldsa67Public):
         # Generate key pair with seed
         public_key, private_key = dilithium_instance.keygen(key_seed)
         
-        return Mldsa67(private_key, public_key)
+        return Mldsa65(private_key, public_key)
 
     def _get_public(self):
         return self.public_key_bytes
@@ -114,7 +114,7 @@ class Mldsa67(Mldsa67Public):
         if format == 'raw':
             return self.private_key_bytes
         else:
-            raise Mldsa67UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
+            raise Mldsa65UsageError(f"get_private_bytes not supported with format {format} for {self.shortname()} keys")
 
     def export_private(self, path, passwd=None):
         """
@@ -123,7 +123,7 @@ class Mldsa67(Mldsa67Public):
         Total size: 4 + 4000 + 1952 = 5956 bytes
         """
         if passwd is not None:
-            raise Mldsa67UsageError("Password protection not supported for raw dilithium keys")
+            raise Mldsa65UsageError("Password protection not supported for raw dilithium keys")
         
         try:
             with open(path, 'wb') as f:
@@ -135,11 +135,11 @@ class Mldsa67(Mldsa67Public):
                 # Write public key bytes
                 f.write(self.public_key_bytes)
         except OSError as e:
-            raise Mldsa67UsageError(f"Failed to write private key to {path}: {e}")
+            raise Mldsa65UsageError(f"Failed to write private key to {path}: {e}")
 
     def sign_digest(self, digest):
         """Return the actual signature"""
-        # MLDSA67 corresponds to Dilithium3
+        # MLDSA65 corresponds to Dilithium3
         dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
         
         # Use sign_with_input which returns a packed signature directly
@@ -157,15 +157,15 @@ class Mldsa67(Mldsa67Public):
 rm mykey.pem
 
 # Generate new key with enhanced format (usese 16-byte seed from os.random())
-python imgtool.py keygen -t mldsa-44 -k mykey.pem
+python imgtool.py keygen -t mldsa-65 -k mykey.pem
 
-# Check file size (should be 3844 bytes now since both public and private keys are present)
+# Check file size (should be 5956 bytes now since both public and private keys are present)
 ls -la mykey.pem
 
 # Test public key extraction 
 python imgtool.py getpub -k mykey.pem -e raw -o pubkey.bin
 
-# Check public key size (should be 1312 bytes)
+# Check public key size (should be 1952 bytes)
 ls -la pubkey.bin
 
 # Test signing (2420-byte packed signatures)
