@@ -98,8 +98,8 @@ class Mldsa65(Mldsa65Public):
         # MLDSA65 corresponds to Dilithium3
         dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
         
-        # Generate 16-byte random seed for key generation
-        key_seed = os.urandom(16)
+        # Generate 32-byte random seed for key generation
+        key_seed = os.urandom(32)
         
         # Generate key pair with seed
         public_key, private_key = dilithium_instance.keygen(key_seed)
