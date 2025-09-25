@@ -104,8 +104,8 @@ class Mldsa44(Mldsa44Public):
         # MLDSA44 corresponds to Dilithium2
         dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
         
-        # Generate 16-byte random seed for key generation
-        key_seed = os.urandom(16)
+        # Generate 32-byte random seed for key generation
+        key_seed = os.urandom(32)
         
         # Generate key pair with seed
         public_key, private_key = dilithium_instance.keygen(key_seed)
