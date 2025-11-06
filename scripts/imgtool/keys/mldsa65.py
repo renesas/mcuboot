@@ -1,11 +1,11 @@
 """
-MLDSA65 key management
+MLDSA65 key management using FIPS 204 specification
 """
 
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from dilithium import Dilithium, DEFAULT_PARAMETERS
+from dilithium_py.ml_dsa import ML_DSA_65
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
@@ -18,10 +18,10 @@ class Mldsa65UsageError(Exception):
 
 class Mldsa65Public(KeyClass):
     def __init__(self, public_key_bytes):
-        """Initialize with raw public key bytes from dilithium"""
+        """Initialize with raw public key bytes from FIPS 204 ML-DSA-65"""
         if not isinstance(public_key_bytes, bytes):
             raise Mldsa65UsageError("Public key must be bytes")
-        if len(public_key_bytes) != 1952:  # Dilithium3 public key size
+        if len(public_key_bytes) != 1952:  # FIPS 204 ML-DSA-65 public key size
             raise Mldsa65UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1952")
         self.public_key_bytes = public_key_bytes
 
@@ -59,51 +59,42 @@ class Mldsa65Public(KeyClass):
         return "MLDSA65"
 
     def sig_len(self):
-        return 3293  # Dilithium3/MLDSA65 signature length
+        return 3309  # FIPS 204 ML-DSA-65 signature length
 
     def verify_digest(self, signature, digest):
-        """Verify that signature is valid for given digest"""
+        """Verify that signature is valid for given digest using FIPS 204 ML-DSA"""
         try:
-            # Use Dilithium3 parameter set for MLDSA65
-            dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
-            
-            # Verify with packed signature and packed public key
-            return dilithium_instance.verify(self.public_key_bytes, digest, signature)
+            # Use FIPS 204 ML-DSA-65 for verification
+            return ML_DSA_65.verify(self.public_key_bytes, digest, signature)
         except Exception:
             return False
 
 
 class Mldsa65(Mldsa65Public):
     """
-    Wrapper around an MLDSA65 private key.
-    
+    Wrapper around an MLDSA65 private key using FIPS 204 specification.
+
     Provides methods for key generation, signing, and exporting both
     private and public keys in various formats for post-quantum cryptography.
-    Uses Dilithium3 parameter set for higher security than MLDSA44.
+    Uses ML-DSA-65 parameter set for higher security than MLDSA44.
     """
 
     def __init__(self, private_key_bytes, public_key_bytes):
-        """Initialize with raw private and public key bytes from dilithium"""
+        """Initialize with raw private and public key bytes from FIPS 204 ML-DSA-65"""
         if not isinstance(private_key_bytes, bytes):
             raise Mldsa65UsageError("Private key must be bytes")
-        if len(private_key_bytes) != 4000:  # Dilithium3 private key size
-            raise Mldsa65UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 4000")
-        
+        if len(private_key_bytes) != 4032:  # FIPS 204 ML-DSA-65 private key size
+            raise Mldsa65UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 4032")
+
         super().__init__(public_key_bytes)
         self.private_key_bytes = private_key_bytes
 
     @staticmethod
     def generate():
-        """Generate a new MLDSA65 key pair using Dilithium3 parameter set"""
-        # MLDSA65 corresponds to Dilithium3
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
-        
-        # Generate 32-byte random seed for key generation
-        key_seed = os.urandom(32)
-        
-        # Generate key pair with seed
-        public_key, private_key = dilithium_instance.keygen(key_seed)
-        
+        """Generate a new MLDSA65 key pair using FIPS 204 ML-DSA specification"""
+        # Use FIPS 204 ML-DSA-65 for key generation
+        public_key, private_key = ML_DSA_65.keygen()
+
         return Mldsa65(private_key, public_key)
 
     def _get_public(self):
@@ -120,7 +111,7 @@ class Mldsa65(Mldsa65Public):
         """
         Write the private key to the given file with both private and public key data.
         Format: 4 bytes length + private key + public key
-        Total size: 4 + 4000 + 1952 = 5956 bytes
+        Total size: 4 + 4032 + 1952 = 5988 bytes
         """
         if passwd is not None:
             raise Mldsa65UsageError("Password protection not supported for raw dilithium keys")
@@ -138,14 +129,11 @@ class Mldsa65(Mldsa65Public):
             raise Mldsa65UsageError(f"Failed to write private key to {path}: {e}")
 
     def sign_digest(self, digest):
-        """Return the actual signature"""
-        # MLDSA65 corresponds to Dilithium3
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium3'])
-        
-        # Use sign_with_input which returns a packed signature directly
-        packed_signature = dilithium_instance.sign_with_input(self.private_key_bytes, digest)
-        
-        return packed_signature
+        """Return the actual signature using FIPS 204 ML-DSA"""
+        # Use FIPS 204 ML-DSA-65 for signing
+        signature = ML_DSA_65.sign(self.private_key_bytes, digest)
+
+        return signature
 
 
 

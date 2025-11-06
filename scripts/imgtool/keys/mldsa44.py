@@ -1,10 +1,10 @@
 """
-MLDSA44 key management
+MLDSA44 key management using FIPS 204 specification
 """
 
 # SPDX-License-Identifier: Apache-2.0
 
-from dilithium import Dilithium  # Use the correct import
+from dilithium_py.ml_dsa import ML_DSA_44
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
@@ -17,10 +17,10 @@ class Mldsa44UsageError(Exception):
 
 class Mldsa44Public(KeyClass):
     def __init__(self, public_key_bytes):
-        """Initialize with raw public key bytes from dilithium"""
+        """Initialize with raw public key bytes from FIPS 204 ML-DSA-44"""
         if not isinstance(public_key_bytes, bytes):
             raise Mldsa44UsageError("Public key must be bytes")
-        if len(public_key_bytes) != 1312:  # Actual Dilithium2 public key size
+        if len(public_key_bytes) != 1312:  # FIPS 204 ML-DSA-44 public key size
             raise Mldsa44UsageError(f"Invalid public key size: {len(public_key_bytes)} bytes, expected 1312")
         self.public_key_bytes = public_key_bytes
 
@@ -58,58 +58,41 @@ class Mldsa44Public(KeyClass):
         return "MLDSA44"
 
     def sig_len(self):
-        return 2420  # Actual Dilithium2/MLDSA44 signature length
+        return 2420  # FIPS 204 ML-DSA-44 signature length
 
     def verify_digest(self, signature, digest):
-        """Verify that signature is valid for given digest"""
+        """Verify that signature is valid for given digest using FIPS 204 ML-DSA"""
         try:
-            # Use Dilithium2 parameter set for MLDSA44
-            from dilithium import DEFAULT_PARAMETERS
-            dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
-            
-            # Unpack the signature for verification
-            z, h = dilithium_instance._unpack_sig(signature)
-            
-            # Verify with unpacked signature and packed public key
-            # Check parameter order - might be (pk, message, z, h) or similar
-            return dilithium_instance.verify(self.public_key_bytes, digest, z, h)
+            # Use FIPS 204 ML-DSA-44 for verification
+            return ML_DSA_44.verify(self.public_key_bytes, digest, signature)
         except Exception:
             return False
 
 
 class Mldsa44(Mldsa44Public):
     """
-    Wrapper around an MLDSA44 private key.
-    
+    Wrapper around an MLDSA44 private key using FIPS 204 specification.
+
     Provides methods for key generation, signing, and exporting both
     private and public keys in various formats for post-quantum cryptography.
     """
 
     def __init__(self, private_key_bytes, public_key_bytes):
-        """Initialize with raw private and public key bytes from dilithium"""
+        """Initialize with raw private and public key bytes from FIPS 204 ML-DSA-44"""
         if not isinstance(private_key_bytes, bytes):
             raise Mldsa44UsageError("Private key must be bytes")
-        if len(private_key_bytes) != 2528:  # Actual Dilithium2 private key size
-            raise Mldsa44UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 2528")
-        
+        if len(private_key_bytes) != 2560:  # FIPS 204 ML-DSA-44 private key size
+            raise Mldsa44UsageError(f"Invalid private key size: {len(private_key_bytes)} bytes, expected 2560")
+
         super().__init__(public_key_bytes)
         self.private_key_bytes = private_key_bytes
 
     @staticmethod
     def generate():
-        """Generate a new MLDSA44 key pair using Dilithium2 parameter set"""
-        import os
-        from dilithium import DEFAULT_PARAMETERS
-        
-        # MLDSA44 corresponds to Dilithium2
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
-        
-        # Generate 32-byte random seed for key generation
-        key_seed = os.urandom(32)
-        
-        # Generate key pair with seed
-        public_key, private_key = dilithium_instance.keygen(key_seed)
-        
+        """Generate a new MLDSA44 key pair using FIPS 204 ML-DSA specification"""
+        # Use FIPS 204 ML-DSA-44 for key generation
+        public_key, private_key = ML_DSA_44.keygen()
+
         return Mldsa44(private_key, public_key)
 
     def _get_public(self):
@@ -126,7 +109,7 @@ class Mldsa44(Mldsa44Public):
 
         """ Write the private key to the given file with both private and public key data.
         Format: 4 bytes length + private key + public key
-        Total size: 4 + 2528 + 1312 = 3844 bytes
+        Total size: 4 + 2560 + 1312 = 3876 bytes
         """
         if passwd is not None:
             raise Mldsa44UsageError("Password protection not supported for raw dilithium keys")
@@ -144,15 +127,11 @@ class Mldsa44(Mldsa44Public):
             raise Mldsa44UsageError(f"Failed to write private key to {path}: {e}")
 
     def sign_digest(self, digest):
-        """Return the actual signature"""
-        from dilithium import DEFAULT_PARAMETERS
-        # MLDSA44 corresponds to Dilithium2
-        dilithium_instance = Dilithium(DEFAULT_PARAMETERS['dilithium2'])
-        
-        # Use sign_with_input which returns a packed signature directly
-        packed_signature = dilithium_instance.sign_with_input(self.private_key_bytes, digest)
-        
-        return packed_signature
+        """Return the actual signature using FIPS 204 ML-DSA"""
+        # Use FIPS 204 ML-DSA-44 for signing
+        signature = ML_DSA_44.sign(self.private_key_bytes, digest)
+
+        return signature
 
 
 
