@@ -67,12 +67,12 @@ def load(path, passwd=None):
         raw_pem = f.read()
     
     try:
-        # Check for MLDSA44 format: 4 + 2528 + 1312 = 3844 bytes
-        if len(raw_pem) == 3844:
+        # Check for MLDSA44 format (FIPS 204): 4 + 2560 + 1312 = 3876 bytes
+        if len(raw_pem) == 3876:
             return load_mldsa44_key(raw_pem)
-        
-        # Check for MLDSA65 format: 4 + 4000 + 1952 = 5956 bytes
-        if len(raw_pem) == 5956:
+
+        # Check for MLDSA65 format (FIPS 204): 4 + 4032 + 1952 = 5988 bytes
+        if len(raw_pem) == 5988:
             return load_mldsa65_key(raw_pem)
             
         # Continue with existing PEM/DER loading for other key types
@@ -136,70 +136,69 @@ def load(path, passwd=None):
 
 
 
-#This is WIP!!
-# Key size reference for MLDSA implementations:
-# MLDSA44 (Dilithium2): Private=2528, Public=1312, Signature=2420, File=3844
-# MLDSA65 (Dilithium3): Private=4000, Public=1952, Signature=3293, File=5956
-# MLDSA87 (Dilithium5): Private=4864, Public=2592, Signature=4595, File=7460
+# Key size reference for FIPS 204 ML-DSA implementations:
+# MLDSA44 (ML-DSA-44): Private=2560, Public=1312, Signature=2420, File=3876
+# MLDSA65 (ML-DSA-65): Private=4032, Public=1952, Signature=3309, File=5988
+# MLDSA87 (ML-DSA-87): Private=4896, Public=2592, Signature=4627, File=7492
 
 def load_mldsa44_key(key_data):
-    """Load MLDSA44 key from custom format: 4-byte length + private_key + public_key"""
+    """Load MLDSA44 key from custom format: 4-byte length + private_key + public_key (FIPS 204)"""
     import struct
-    
+
     # Validate minimum size
     if len(key_data) < 4:
         raise ValueError("Invalid MLDSA44 key file: too short")
-    
+
     # Read the private key length from first 4 bytes
     priv_len = struct.unpack('<I', key_data[:4])[0]
-    
-    # Validate expected lengths
+
+    # Validate expected lengths (FIPS 204 sizes)
     expected_total = 4 + priv_len + 1312  # header + private + public
     if len(key_data) != expected_total:
         raise ValueError(f"Invalid MLDSA44 key file: expected {expected_total} bytes, got {len(key_data)}")
-    
-    # Validate private key length
-    if priv_len != 2528:
-        raise ValueError(f"Invalid MLDSA44 private key length: expected 2528, got {priv_len}")
-    
+
+    # Validate private key length (FIPS 204: 2560 bytes)
+    if priv_len != 2560:
+        raise ValueError(f"Invalid MLDSA44 private key length: expected 2560, got {priv_len}")
+
     # Extract keys
     private_key_bytes = key_data[4:4+priv_len]
     public_key_bytes = key_data[4+priv_len:]
-    
+
     # Validate public key length
     if len(public_key_bytes) != 1312:
         raise ValueError(f"Invalid MLDSA44 public key length: expected 1312, got {len(public_key_bytes)}")
-    
+
     from .mldsa44 import Mldsa44
     return Mldsa44(private_key_bytes, public_key_bytes)
 
 def load_mldsa65_key(key_data):
-    """Load MLDSA65 key from custom format: 4-byte length + private_key + public_key"""
+    """Load MLDSA65 key from custom format: 4-byte length + private_key + public_key (FIPS 204)"""
     import struct
-    
+
     # Validate minimum size
     if len(key_data) < 4:
         raise ValueError("Invalid MLDSA65 key file: too short")
-    
+
     # Read the private key length from first 4 bytes
     priv_len = struct.unpack('<I', key_data[:4])[0]
-    
-    # Validate expected lengths
+
+    # Validate expected lengths (FIPS 204 sizes)
     expected_total = 4 + priv_len + 1952  # header + private + public
     if len(key_data) != expected_total:
         raise ValueError(f"Invalid MLDSA65 key file: expected {expected_total} bytes, got {len(key_data)}")
-    
-    # Validate private key length
-    if priv_len != 4000:
-        raise ValueError(f"Invalid MLDSA65 private key length: expected 4000, got {priv_len}")
-    
+
+    # Validate private key length (FIPS 204: 4032 bytes)
+    if priv_len != 4032:
+        raise ValueError(f"Invalid MLDSA65 private key length: expected 4032, got {priv_len}")
+
     # Extract keys
     private_key_bytes = key_data[4:4+priv_len]
     public_key_bytes = key_data[4+priv_len:]
-    
+
     # Validate public key length
     if len(public_key_bytes) != 1952:
         raise ValueError(f"Invalid MLDSA65 public key length: expected 1952, got {len(public_key_bytes)}")
-    
+
     from .mldsa65 import Mldsa65
     return Mldsa65(private_key_bytes, public_key_bytes)
