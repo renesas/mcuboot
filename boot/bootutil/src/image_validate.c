@@ -53,6 +53,23 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #ifdef MCUBOOT_ENC_IMAGES
 #include "bootutil/enc_key.h"
 #endif
+
+#if defined(MCUBOOT_USE_MBED_TLS)
+#if defined(MCUBOOT_SIGN_RSA)
+#include "mbedtls/rsa.h"
+#endif
+#if defined(MCUBOOT_SIGN_EC256)
+#include "mbedtls/ecdsa.h"
+#endif
+#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65)
+#include "mbedtls/mldsa.h"
+#endif
+#if defined(MCUBOOT_ENC_IMAGES) || defined(MCUBOOT_SIGN_RSA) || \
+    defined(MCUBOOT_SIGN_EC256)
+#include "mbedtls/asn1.h"
+#endif
+#endif /* MCUBOOT_USE_MBED_TLS */
+
 #include "bootutil_priv.h"
 
 /*
@@ -64,7 +81,9 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #if (defined(MCUBOOT_SIGN_RSA)      + \
      defined(MCUBOOT_SIGN_EC256)    + \
      defined(MCUBOOT_SIGN_EC384)    + \
-     defined(MCUBOOT_SIGN_ED25519)) > 1
+     defined(MCUBOOT_SIGN_ED25519)  + \
+     defined(MCUBOOT_SIGN_ML_DSA44) + \
+     defined(MCUBOOT_SIGN_ML_DSA65)) > 1
 #error "Only a single signature type is supported!"
 #endif
 
@@ -84,6 +103,14 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ECDSA_SIG
 #    define SIG_BUF_SIZE 128
 #    define EXPECTED_SIG_LEN(x) (1) /* always true, ASN.1 will validate */
+#elif defined(MCUBOOT_SIGN_ML_DSA44)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA44_SIG
+#    define SIG_BUF_SIZE 2420
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
+#elif defined(MCUBOOT_SIGN_ML_DSA65)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA65_SIG
+#    define SIG_BUF_SIZE 3309
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
 #elif defined(MCUBOOT_SIGN_ED25519)
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ED25519
 #    define SIG_BUF_SIZE 64
