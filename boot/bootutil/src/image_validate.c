@@ -51,7 +51,7 @@
 #if defined(MCUBOOT_SIGN_EC256)
 #include "mbedtls/ecdsa.h"
 #endif
-#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65)
+#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87)
 #include "mbedtls/mldsa.h"
 #endif
 #if defined(MCUBOOT_ENC_IMAGES) || defined(MCUBOOT_SIGN_RSA) || \
@@ -181,7 +181,8 @@ bootutil_img_hash(struct enc_key_data *enc_state, int image_index,
      defined(MCUBOOT_SIGN_EC384)    + \
      defined(MCUBOOT_SIGN_ED25519)  + \
      defined(MCUBOOT_SIGN_ML_DSA44) + \
-     defined(MCUBOOT_SIGN_ML_DSA65)) > 1
+     defined(MCUBOOT_SIGN_ML_DSA65) + \
+     defined(MCUBOOT_SIGN_ML_DSA87)) > 1
 #error "Only a single signature type is supported!"
 #endif
 
@@ -208,6 +209,10 @@ bootutil_img_hash(struct enc_key_data *enc_state, int image_index,
 #elif defined(MCUBOOT_SIGN_ML_DSA65)
 #    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA65_SIG
 #    define SIG_BUF_SIZE 3309
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
+#elif defined(MCUBOOT_SIGN_ML_DSA87)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA87_SIG
+#    define SIG_BUF_SIZE 4627
 #    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
 #elif defined(MCUBOOT_SIGN_ED25519)
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ED25519
@@ -382,6 +387,7 @@ static const uint16_t allowed_unprot_tlvs[] = {
      IMAGE_TLV_ED25519,
      IMAGE_TLV_MLDSA44_SIG,
      IMAGE_TLV_MLDSA65_SIG,
+     IMAGE_TLV_MLDSA87_SIG,
      IMAGE_TLV_ENC_RSA2048,
      IMAGE_TLV_ENC_KW,
      IMAGE_TLV_ENC_EC256,

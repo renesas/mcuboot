@@ -96,6 +96,7 @@ struct flash_area;
 #define IMAGE_TLV_ED25519           0x24   /* ed25519 of hash output */
 #define IMAGE_TLV_MLDSA44_SIG       0x25   /* ML-DSA44 of hash output */
 #define IMAGE_TLV_MLDSA65_SIG       0x26   /* ML-DSA65 of hash output */
+#define IMAGE_TLV_MLDSA87_SIG       0x27   /* ML-DSA87 of hash output */
 #define IMAGE_TLV_ENC_RSA2048       0x30   /* Key encrypted with RSA-OAEP-2048 */
 #define IMAGE_TLV_ENC_KW            0x31   /* Key encrypted with AES-KW 128 or 256*/
 #define IMAGE_TLV_ENC_EC256         0x32   /* Key encrypted with ECIES-EC256 */

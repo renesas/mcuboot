@@ -69,6 +69,7 @@ TLV_VALUES = {
         'ED25519': 0x24,
         'MLDSA44': 0x25,
         'MLDSA65': 0x26,
+        'MLDSA87': 0x27,
         'ENCRSA2048': 0x30,
         'ENCKW': 0x31,
         'ENCEC256': 0x32,
