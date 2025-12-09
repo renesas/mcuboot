@@ -32,7 +32,7 @@ from imgtool import image, imgtool_version
 from imgtool.dumpinfo import dump_imginfo
 from imgtool.version import decode_version
 
-from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError
+from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError, Mldsa87UsageError
 
 
 comp_default_dictsize=131072
@@ -77,6 +77,9 @@ def gen_mldsa44(keyfile, passwd):
 def gen_mldsa65(keyfile, passwd):
     keys.Mldsa65.generate().export_private(path=keyfile, passwd=passwd)
 
+def gen_mldsa87(keyfile, passwd):
+    keys.Mldsa87.generate().export_private(path=keyfile, passwd=passwd)
+
 valid_langs = ['c', 'rust']
 valid_hash_encodings = ['lang-c', 'raw']
 valid_encodings = ['lang-c', 'lang-rust', 'pem', 'raw']
@@ -89,6 +92,7 @@ keygens = {
     'x25519':     gen_x25519,
     'mldsa-44':   gen_mldsa44,
     'mldsa-65':   gen_mldsa65,
+    'mldsa-87':   gen_mldsa87,
 }
 valid_formats = ['openssl', 'pkcs8']
 valid_sha = [ 'auto', '256', '384', '512' ]
@@ -224,7 +228,7 @@ def getpriv(key, minimal, format):
         print("Invalid passphrase")
     try:
         key.emit_private(minimal, format)
-    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError) as e:
+    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError, Mldsa87UsageError) as e:
         raise click.UsageError(e) from e
 
 

@@ -29,7 +29,7 @@
 
 #include "mcuboot_config/mcuboot_config.h"
 
-#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_MLDSA65)
+#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87)
 #if !defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)
 #include "bootutil_priv.h"
 #include "bootutil/fault_injection_hardening.h"
@@ -93,4 +93,4 @@ out:
 #endif /* MCUBOOT_BUILTIN_KEY */
 
 #endif /* !MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK */
-#endif /* MCUBOOT_SIGN_EC256 || MCUBOOT_SIGN_EC384 */
+#endif /* defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87) */

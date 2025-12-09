@@ -91,23 +91,23 @@ class Mldsa44(Mldsa44Public):
     @staticmethod
     def generate():
         """Generate a new MLDSA44 key pair using FIPS 204 ML-DSA specification"""
-        seed = bytes([
-            0x4B, 0xE7, 0xA0, 0x1A, 0x99, 0xA5, 0xE5, 0xBC,
-            0xFE, 0x3C, 0x06, 0x78, 0x5D, 0x8E, 0x4E, 0xC6,
-            0x64, 0x08, 0x22, 0x27, 0xD8, 0x67, 0x04, 0xE9,
-            0xE4, 0x48, 0x62, 0x62, 0x3A, 0x05, 0xC8, 0xB3,
-        ])
-        # seed = os.urandom(32)
+        # seed = bytes([
+        #     0x4B, 0xE7, 0xA0, 0x1A, 0x99, 0xA5, 0xE5, 0xBC,
+        #     0xFE, 0x3C, 0x06, 0x78, 0x5D, 0x8E, 0x4E, 0xC6,
+        #     0x64, 0x08, 0x22, 0x27, 0xD8, 0x67, 0x04, 0xE9,
+        #     0xE4, 0x48, 0x62, 0x62, 0x3A, 0x05, 0xC8, 0xB3,
+        # ])
+        seed = os.urandom(32)
         formatted = ', '.join(f'0x{b:02X}' for b in seed)
-        print(f"Generated seed:\nuint8_t seed[32] = {{ {formatted} }};")
+        # print(f"Generated seed:\nuint8_t seed[32] = {{ {formatted} }};")
 
         # Use FIPS 204 ML-DSA-44 for key generation
         public_key, private_key = ML_DSA_44.key_derive(seed)
         
         formatted = ', '.join(f'0x{b:02X}' for b in public_key)
-        print(f"Generated public_key:\nuint8_t public_key[1312] = {{ {formatted} }};")
+        # print(f"Generated public_key:\nuint8_t public_key[1312] = {{ {formatted} }};")
         formatted = ', '.join(f'0x{b:02X}' for b in private_key)
-        print(f"Generated private_key:\nuint8_t private_key[2560] = {{ {formatted} }};")
+        # print(f"Generated private_key:\nuint8_t private_key[2560] = {{ {formatted} }};")
 
         return Mldsa44(private_key, public_key)
 
@@ -146,10 +146,10 @@ class Mldsa44(Mldsa44Public):
         """Return the actual signature using FIPS 204 ML-DSA"""
         # Use FIPS 204 ML-DSA-44 for signing
         formatted = ', '.join(f'0x{b:02X}' for b in digest)
-        print(f"Generated digest:\nuint8_t digest[32] = {{ {formatted} }};")
+        # print(f"Generated digest:\nuint8_t digest[32] = {{ {formatted} }};")
         signature = ML_DSA_44.sign(self.private_key_bytes, digest)
         formatted = ', '.join(f'0x{b:02X}' for b in signature)
-        print(f"Generated signature:\nuint8_t signature[64] = {{ {formatted} }};")
+        # print(f"Generated signature:\nuint8_t signature[64] = {{ {formatted} }};")
 
         return signature
 

@@ -54,6 +54,14 @@ extern "C" {
 
 #if defined(MCUBOOT_USE_PSA_CRYPTO)
 
+#if defined(MCUBOOT_SIGN_ML_DSA87)
+    #define KEY_BITS PSA_KEY_BITS_ML_DSA_87
+#elif defined(MCUBOOT_SIGN_ML_DSA65)
+    #define KEY_BITS PSA_KEY_BITS_ML_DSA_65
+#else
+    #define KEY_BITS PSA_KEY_BITS_ML_DSA_44
+#endif
+
 typedef struct {
     psa_key_id_t key_id;
 } bootutil_mldsa_context;
@@ -78,15 +86,9 @@ static int bootutil_mldsa_parse_public_key(bootutil_mldsa_context *ctx, uint8_t 
 
     /* Set attributes and import key */
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_HASH_ML_DSA(PSA_ALG_SHA256));
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_ML_DSA);
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ML_DSA_PUBLIC_KEY);
-    if (PSA_ML_DSA_44_PUB_KEY_SIZE == key_len) {
-        psa_set_key_bits(&key_attributes, PSA_KEY_BITS_ML_DSA_44);
-    } else if (PSA_ML_DSA_65_PUB_KEY_SIZE == key_len) {
-        psa_set_key_bits(&key_attributes, PSA_KEY_BITS_ML_DSA_65);
-    } else {
-        return -1;
-    }
+    psa_set_key_bits(&key_attributes, KEY_BITS);
 
     status = psa_import_key(&key_attributes, *p, key_len, &ctx->key_id);
     return (int)status;
@@ -100,11 +102,18 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
     (void)pk;
     (void)pk_len;
 
-    return (int) psa_verify_hash(ctx->key_id, PSA_ALG_HASH_ML_DSA(PSA_ALG_SHA256),
-                                 hash, hash_len, sig, sig_len);
+    return (int) psa_verify_hash(ctx->key_id, PSA_ALG_ML_DSA, hash, hash_len, sig, sig_len);
 }
 
 #elif defined(MCUBOOT_USE_MBED_TLS)
+
+#if defined(MCUBOOT_SIGN_ML_DSA87)
+    #define KEY_BITS MBEDTLS_ML_DSA_87
+#elif defined(MCUBOOT_SIGN_ML_DSA65)
+    #define KEY_BITS MBEDTLS_ML_DSA_65
+#else
+    #define KEY_BITS MBEDTLS_ML_DSA_44
+#endif
 
 typedef mbedtls_mldsa_context bootutil_mldsa_context;
 
@@ -123,7 +132,7 @@ static inline void bootutil_mldsa_drop(bootutil_mldsa_context *ctx)
  */
 static int bootutil_mldsa_parse_public_key(bootutil_mldsa_context *ctx, uint8_t **p, uint8_t *end)
 {
-    ctx->public_key.p_data = *p;
+    ctx->public_key.p_data = (uint32_t*)*p;
     ctx->public_key.len = (end - *p);
 
     return 0;
@@ -132,6 +141,7 @@ static int bootutil_mldsa_parse_public_key(bootutil_mldsa_context *ctx, uint8_t 
 static uint32_t mbedtls_mldsa_get_random(const uint32_t rand_len, uint32_t * const p_random)
 {
     if (rand_len == 0 || p_random == NULL) {
+        /* This is the expected failure value for PQC internally */
         return 0xAAAAAAAAU;
     }
 
@@ -140,6 +150,7 @@ static uint32_t mbedtls_mldsa_get_random(const uint32_t rand_len, uint32_t * con
         p_random[i] = mbedtls_ctr_drbg_random();
     }
 
+    /* This is the expected success value for PQC internally */
     return 0x55555555U;
 }
 
@@ -148,13 +159,13 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
                                         uint8_t *hash, size_t hash_len,
                                         uint8_t *sig, size_t sig_len)
 {
+    /* What we need is in the context */
     (void)pk;
     (void)pk_len;
 
     int ret = -1;
     mbedtls_mldsa_data_t hash_data;
     mbedtls_mldsa_data_t sign_data;
-    mbedtls_mldsa_bits_t  bits = (ctx->public_key.len == 1312) ? MBEDTLS_ML_DSA_44 : MBEDTLS_ML_DSA_65;
 
     hash_data.p_data = (uint32_t *)hash;
     hash_data.len = hash_len;

@@ -287,6 +287,8 @@ int boot_save_shared_data(const struct image_header *hdr, const struct flash_are
     uint8_t signature_type = MCUBOOT_SIGNATURE_TYPE_ML_DSA44;
 #elif defined(MCUBOOT_SIGN_ML_DSA65)
     uint8_t signature_type = MCUBOOT_SIGNATURE_TYPE_ML_DSA65;
+#elif defined(MCUBOOT_SIGN_ML_DSA87)
+    uint8_t signature_type = MCUBOOT_SIGNATURE_TYPE_ML_DSA87;
 #else
     uint8_t signature_type = MCUBOOT_SIGNATURE_TYPE_NONE;
 #endif
