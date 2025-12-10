@@ -40,6 +40,7 @@
     #include <psa/crypto.h>
     #include <string.h>
 #elif defined(MCUBOOT_USE_MBED_TLS)
+    #include <mbedtls/ctr_drbg.h>
     #include <mbedtls/mldsa.h>
 #endif /* MCUBOOT_USE_MBED_TLS */
 
