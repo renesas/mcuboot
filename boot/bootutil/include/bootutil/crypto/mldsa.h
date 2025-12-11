@@ -117,10 +117,13 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
 #endif
 
 typedef mbedtls_mldsa_context bootutil_mldsa_context;
+static mbedtls_ctr_drbg_context drbg_ctx;
 
 static inline void bootutil_mldsa_init(bootutil_mldsa_context *ctx)
 {
     mbedtls_mldsa_init(ctx);
+
+    mbedtls_ctr_drbg_init(&drbg_ctx);
 }
 
 static inline void bootutil_mldsa_drop(bootutil_mldsa_context *ctx)
@@ -148,7 +151,11 @@ static uint32_t mbedtls_mldsa_get_random(const uint32_t rand_len, uint32_t * con
 
     // Generate random data
     for (uint32_t i = 0; i < (rand_len / 4); i++) {
-        p_random[i] = mbedtls_ctr_drbg_random();
+        uint8_t *p_byte = (uint8_t*)&p_random[i];
+        if (mbedtls_ctr_drbg_random(&drbg_ctx, p_byte, 4) != 0) {
+            /* This is the expected failure value for PQC internally */
+            return 0xAAAAAAAAU;
+        }
     }
 
     /* This is the expected success value for PQC internally */
