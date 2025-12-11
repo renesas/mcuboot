@@ -188,7 +188,6 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
         }
     }
 
-    mbedtls_free(ctx);
     return ret;
 }
 
