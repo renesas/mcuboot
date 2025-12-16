@@ -28,21 +28,12 @@
 
 #include "mcuboot_config/mcuboot_config.h"
 
-#if defined(MCUBOOT_USE_PSA_CRYPTO) || defined(MCUBOOT_USE_MBED_TLS)
-#define MCUBOOT_USE_PSA_OR_MBED_TLS
-#endif /* MCUBOOT_USE_PSA_CRYPTO || MCUBOOT_USE_MBED_TLS */
-
-#if (defined(MCUBOOT_USE_PSA_OR_MBED_TLS)) != 1
+#if (defined(MCUBOOT_USE_MBED_TLS)) != 1
     #error "One crypto backend must be defined: either MBED_TLS/PSA_CRYPTO"
 #endif
 
-#if defined(MCUBOOT_USE_PSA_CRYPTO)
-    #include <psa/crypto.h>
-    #include <string.h>
-#elif defined(MCUBOOT_USE_MBED_TLS)
-    #include <mbedtls/ctr_drbg.h>
-    #include <mbedtls/mldsa.h>
-#endif /* MCUBOOT_USE_MBED_TLS */
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/mldsa.h>
 
 /* Universal defines */
 
@@ -52,61 +43,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if defined(MCUBOOT_USE_PSA_CRYPTO)
-
-#if defined(MCUBOOT_SIGN_ML_DSA87)
-    #define KEY_BITS PSA_KEY_BITS_ML_DSA_87
-#elif defined(MCUBOOT_SIGN_ML_DSA65)
-    #define KEY_BITS PSA_KEY_BITS_ML_DSA_65
-#else
-    #define KEY_BITS PSA_KEY_BITS_ML_DSA_44
-#endif
-
-typedef struct {
-    psa_key_id_t key_id;
-} bootutil_mldsa_context;
-
-static inline void bootutil_mldsa_init(bootutil_mldsa_context *ctx)
-{
-    ctx->key_id = PSA_KEY_ID_NULL;
-}
-
-static inline void bootutil_mldsa_drop(bootutil_mldsa_context *ctx)
-{
-    if (ctx->key_id != PSA_KEY_ID_NULL) {
-        (void)psa_destroy_key(ctx->key_id);
-    }
-}
-
-static int bootutil_mldsa_parse_public_key(bootutil_mldsa_context *ctx, uint8_t **p, uint8_t *end)
-{
-    psa_status_t status = PSA_ERROR_INVALID_ARGUMENT;
-    psa_key_attributes_t key_attributes = psa_key_attributes_init();
-    size_t key_len = (size_t)(end - *p);
-
-    /* Set attributes and import key */
-    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
-    psa_set_key_algorithm(&key_attributes, PSA_ALG_ML_DSA);
-    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ML_DSA_PUBLIC_KEY);
-    psa_set_key_bits(&key_attributes, KEY_BITS);
-
-    status = psa_import_key(&key_attributes, *p, key_len, &ctx->key_id);
-    return (int)status;
-}
-
-static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
-                                        uint8_t *pk, size_t pk_len,
-                                        uint8_t *hash, size_t hash_len,
-                                        uint8_t *sig, size_t sig_len)
-{
-    (void)pk;
-    (void)pk_len;
-
-    return (int) psa_verify_hash(ctx->key_id, PSA_ALG_ML_DSA, hash, hash_len, sig, sig_len);
-}
-
-#elif defined(MCUBOOT_USE_MBED_TLS)
 
 #if defined(MCUBOOT_SIGN_ML_DSA87)
     #define KEY_BITS MBEDTLS_ML_DSA_87
@@ -189,8 +125,6 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
 
     return ret;
 }
-
-#endif /* MCUBOOT_USE_MBED_TLS */
 
 #ifdef __cplusplus
 }
