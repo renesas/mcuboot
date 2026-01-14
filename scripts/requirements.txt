@@ -3,3 +3,4 @@ intelhex
 click
 cbor2
 pyyaml
+dilithium-py>=1.3.0
