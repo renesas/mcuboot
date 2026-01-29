@@ -43,6 +43,7 @@
 
 #elif defined(MCUBOOT_USE_MBED_TLS)
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
 #include "mbedtls/rsa.h"
 #include "mbedtls/version.h"
 #if defined(BOOTUTIL_CRYPTO_RSA_CRYPT_ENABLED)
