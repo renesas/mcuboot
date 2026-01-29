@@ -385,6 +385,39 @@ static void do_boot(struct boot_rsp *rsp)
     vt->reset();
 }
 
+#elif defined(CONFIG_RX)
+
+extern uint8_t __exvectors_start[];
+extern uint8_t __exvectors_end[];
+
+static void do_boot(struct boot_rsp *rsp)
+{
+    void *start;
+
+    /* Application places its exception vectors at the beginning of the image */
+    uintptr_t exvector_start = (uintptr_t)__exvectors_start;
+    uintptr_t exvector_end   = (uintptr_t)__exvectors_end;
+
+    size_t exvector_size = exvector_end - exvector_start;
+
+#if defined(MCUBOOT_RAM_LOAD)
+    start = (void *)(rsp->br_hdr->ih_load_addr + rsp->br_hdr->ih_hdr_size + exvector_size);
+#else
+    uintptr_t flash_base;
+    int rc;
+
+    rc = flash_device_base(rsp->br_flash_dev_id, &flash_base);
+    assert(rc == 0);
+
+    start = (void *)(flash_base + rsp->br_image_off +
+                     rsp->br_hdr->ih_hdr_size + exvector_size);
+#endif
+
+    /* Lock interrupts and dive into the entry point */
+    irq_lock();
+    ((void (*)(void))start)();
+}
+
 #else
 /* Default: Assume entry point is at the very beginning of the image. Simply
  * lock interrupts and jump there. This is the right thing to do for X86 and
