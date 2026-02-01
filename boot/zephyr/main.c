@@ -412,6 +412,14 @@ static void do_boot(struct boot_rsp *rsp)
     start = (void *)(flash_base + rsp->br_image_off +
                      rsp->br_hdr->ih_hdr_size + exvector_size);
 #endif
+    
+#if defined(CONFIG_BOOT_DISABLE_CACHES)
+    /* Flush and disable instruction/data caches before chain-loading the application */
+    (void)sys_cache_instr_flush_all();
+    (void)sys_cache_data_flush_all();
+    sys_cache_instr_disable();
+    sys_cache_data_disable();
+#endif
 
     /* Lock interrupts and dive into the entry point */
     irq_lock();
