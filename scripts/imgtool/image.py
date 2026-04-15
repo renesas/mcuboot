@@ -195,6 +195,9 @@ ALLOWED_KEY_SHA = {
     # This two are set to 256 for compatibility, the right would be 512
     keys.Ed25519            : ['256', '512'],
     keys.Ed25519Public      : ['256', '512'],
+    keys.Mldsa44            : ['256', '512'],
+    keys.Mldsa65            : ['256', '512'],
+    keys.Mldsa87            : ['256', '512'],
     keys.X25519             : ['256', '512']
 }
 
