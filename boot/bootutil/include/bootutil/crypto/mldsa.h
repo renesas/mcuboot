@@ -117,7 +117,7 @@ static inline int bootutil_mldsa_verify(bootutil_mldsa_context *ctx,
     sign_data.len = sig_len;
 
     /* Use MBEDTLS_MD_NONE for pure ML-DSA (matches Python ML_DSA_44.sign() which uses SHAKE256 internally) */
-    ret = mbedtls_mldsa_verify((mbedtls_mldsa_context *)ctx, bits, MBEDTLS_MD_NONE, &sign_data, &hash_data, mbedtls_mldsa_get_random);
+    ret = mbedtls_mldsa_verify((mbedtls_mldsa_context *)ctx, KEY_BITS, MBEDTLS_MD_NONE, &sign_data, &hash_data, mbedtls_mldsa_get_random);
     if (ret == 0) {
         if ((sign_data.len > sig_len) || (hash_data.len > hash_len)) {
             ret = -2;
