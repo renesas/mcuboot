@@ -70,6 +70,12 @@ static inline int bootutil_aes_ctr_decrypt(bootutil_aes_ctr_context *ctx, uint8_
     return common_bootutil_aes_ctr_crypt(ctx, counter, c, clen, blk_off, m);
 }
 
+static inline int bootutil_aes_ctr_finish(bootutil_aes_ctr_context *ctx)
+{
+    (void)ctx;
+    return 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

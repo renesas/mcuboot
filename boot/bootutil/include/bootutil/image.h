@@ -111,7 +111,7 @@ extern "C" {
                                              */
 #define IMAGE_TLV_MLDSA44_SIG       0x26   /* ML-DSA44 of hash output */
 #define IMAGE_TLV_MLDSA65_SIG       0x27   /* ML-DSA65 of hash output */
-<<<<<<< HEAD
+#define IMAGE_TLV_MLDSA87_SIG       0x28   /* ML-DSA87 of hash output */
 #define IMAGE_TLV_ENC_RSA2048       0x30    /* Key encrypted with RSA-OAEP-2048 */
 #define IMAGE_TLV_ENC_KW            0x31    /* Key encrypted with AES-KW 128 or 256*/
 #define IMAGE_TLV_ENC_EC256         0x32    /* Key encrypted with ECIES-EC256 */
@@ -122,16 +122,6 @@ extern "C" {
 #define IMAGE_TLV_DEPENDENCY        0x40    /* Image depends on other image */
 #define IMAGE_TLV_SEC_CNT           0x50    /* security counter */
 #define IMAGE_TLV_BOOT_RECORD       0x60    /* measured boot record */
-=======
-#define IMAGE_TLV_MLDSA87_SIG       0x28   /* ML-DSA87 of hash output */
-#define IMAGE_TLV_ENC_RSA2048       0x30   /* Key encrypted with RSA-OAEP-2048 */
-#define IMAGE_TLV_ENC_KW            0x31   /* Key encrypted with AES-KW 128 or 256*/
-#define IMAGE_TLV_ENC_EC256         0x32   /* Key encrypted with ECIES-EC256 */
-#define IMAGE_TLV_ENC_X25519        0x33   /* Key encrypted with ECIES-X25519 */
-#define IMAGE_TLV_DEPENDENCY        0x40   /* Image depends on other image */
-#define IMAGE_TLV_SEC_CNT           0x50   /* security counter */
-#define IMAGE_TLV_BOOT_RECORD       0x60   /* measured boot record */
->>>>>>> c7c6a364 (Merge FSPRA-5440_MCUBoot_imgtool_MLDSA)
 /* The following flags relate to compressed images and are for the decompressed image data */
 #define IMAGE_TLV_DECOMP_SIZE       0x70    /* Decompressed image size excluding header/TLVs */
 #define IMAGE_TLV_DECOMP_SHA        0x71    /*
