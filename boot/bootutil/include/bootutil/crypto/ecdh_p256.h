@@ -157,6 +157,8 @@ static inline int bootutil_ecdh_p256_shared_secret(bootutil_ecdh_p256_context *c
 #if defined(MCUBOOT_USE_OCRYPTO)
 #define NUM_ECC_BYTES 32
 typedef ocrypto_ecdh_p256_ctx bootutil_ecdh_p256_context;
+typedef bootutil_ecdh_p256_context bootutil_key_exchange_ctx;
+
 static inline void bootutil_ecdh_p256_init(bootutil_ecdh_p256_context *ctx)
 {
     (void)ctx;
