@@ -192,6 +192,24 @@ config BOOT_IMG_HASH_DIRECTLY_ON_STORAGE
 	      option will not work with devices that use external storage for
 	      either of the image slots.
 
+config BOOT_SIGNATURE_TYPE_PURE
+	bool "Use Pure signature of image"
+	depends on BOOT_SIGNATURE_TYPE_PURE_ALLOW
+	help
+	  The Pure signature is calculated directly over the image
+	  (header + image + protected TLVs) rather than over a pre-computed
+	  hash of the image.
+
+	  This option is:
+	    - Optional for BOOT_SIGNATURE_TYPE_ED25519: when enabled, ed25519
+	      signs the full image; when disabled, ed25519 signs SHA512(SHA256(image)).
+	    - Mandatory and automatically selected for BOOT_SIGNATURE_TYPE_ML_DSA:
+	      ML-DSA (FIPS 204) always operates in Pure mode.
+
+	  The image to be verified must be accessible through the memory address
+	  space (e.g. XIP flash) so that the cryptographic function can access
+	  it via a pointer.
+
 choice BOOT_IMG_HASH_ALG
 	prompt "Selected image hash algorithm"
 	default BOOT_IMG_HASH_ALG_SHA256 if BOOT_IMG_HASH_ALG_SHA256_ALLOW
@@ -228,10 +246,12 @@ endchoice # BOOT_IMG_HASH_ALG
 config BOOT_SIGNATURE_TYPE_PURE_ALLOW
 	bool
 	help
-	  Hidden option set by configurations that allow Pure variant,
-	  for example ed25519. The pure variant means that image
-	  signature is calculated over entire image instead of hash
-	  of an image.
+	  Hidden option set by signature type configurations that support
+	  or require the Pure variant. Currently set by:
+	    - BOOT_SIGNATURE_TYPE_ED25519: supports Pure as an optional mode.
+	    - BOOT_SIGNATURE_TYPE_ML_DSA: requires Pure (always selected).
+	  The pure variant means that the image signature is calculated
+	  directly over the image rather than over a hash of the image.
 
 choice BOOT_SIGNATURE_TYPE
 	prompt "Signature type"
@@ -368,16 +388,6 @@ config BOOT_SIGNATURE_TYPE_ED25519
 
 if BOOT_SIGNATURE_TYPE_ED25519
 
-config BOOT_SIGNATURE_TYPE_PURE
-	bool "Use Pure signature of image"
-	depends on BOOT_SIGNATURE_TYPE_PURE_ALLOW
-	help
-	  The Pure signature is calculated directly over image rather than
-	  hash of an image, as the BOOT_SIGNATURE_TYPE_ED25519 does by
-	  default.
-	  Image to be verified needs to be accessible through memory address
-	  space that cryptography functions can access via pointers.
-
 choice BOOT_ED25519_IMPLEMENTATION
 	prompt "Ecdsa implementation"
 	default BOOT_ED25519_TINYCRYPT
@@ -420,6 +430,45 @@ config BOOT_KEY_IMPORT_BYPASS_ASN
 	  in ASN.1 bitstream; this reduces MCUboot code by removing
 	  the ASN.1 processing.
 endif
+
+config BOOT_SIGNATURE_TYPE_ML_DSA
+	bool "ML-DSA post-quantum digital signatures (FIPS 204)"
+	select BOOT_SIGNATURE_TYPE_PURE_ALLOW
+	select BOOT_SIGNATURE_TYPE_PURE
+	select PSA_WANT_ALG_SHAKE256
+	help
+	  ML-DSA (FIPS 204) is the NIST standard for post-quantum digital
+	  signatures. This option enables image signature verification using
+	  ML-DSA-87 (NIST Security Category 5, equivalent to AES-256).
+
+	  ML-DSA always operates in Pure mode: the signature is computed
+	  directly over the image (header + image + protected TLVs) without
+	  pre-hashing. The flash area must be memory-mapped (XIP).
+
+	  Public key: 2592 bytes, Signature: 4627 bytes.
+
+if BOOT_SIGNATURE_TYPE_ML_DSA
+
+choice BOOT_ML_DSA_IMPLEMENTATION
+	prompt "ML-DSA implementation"
+	default BOOT_ML_DSA_PSA
+
+config BOOT_ML_DSA_PSA
+	bool "Use PSA Crypto API"
+	select BOOT_USE_PSA_CRYPTO
+	select PSA_CRYPTO
+	select TEST_RANDOM_GENERATOR if !ENTROPY_HAS_DRIVER
+	select TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
+	select TF_PSA_CRYPTO_PQCP_MLDSA_87_ENABLED
+	select TF_PSA_CRYPTO_PQCP_REDUCE_RAM
+	select BOOT_IMG_HASH_ALG_SHA256_ALLOW
+	help
+	  Use the PSA Crypto API with the mldsa-native driver for ML-DSA-87
+	  signature verification via psa_verify_message().
+
+endchoice
+
+endif # BOOT_SIGNATURE_TYPE_ML_DSA
 
 endchoice
 

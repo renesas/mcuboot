@@ -31,6 +31,7 @@ target_sources(bootutil
         src/image_ecdsa.c
         src/image_ed25519.c
         src/image_rsa.c
+        src/image_mldsa.c
         src/image_validate.c
         src/loader.c
         src/swap_misc.c

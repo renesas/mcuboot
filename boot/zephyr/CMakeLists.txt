@@ -89,6 +89,7 @@ zephyr_sources(
   ${BOOT_DIR}/bootutil/src/image_rsa.c
   ${BOOT_DIR}/bootutil/src/image_ecdsa.c
   ${BOOT_DIR}/bootutil/src/image_ed25519.c
+  ${BOOT_DIR}/bootutil/src/image_mldsa.c
   ${BOOT_DIR}/bootutil/src/bootutil_misc.c
   ${BOOT_DIR}/bootutil/src/bootutil_area.c
   ${BOOT_DIR}/bootutil/src/bootutil_loader.c
@@ -626,6 +627,8 @@ if(SYSBUILD)
       set(boot_tlv_estimate 150)
     elseif(CONFIG_BOOT_SIGNATURE_TYPE_ED25519)
       set(boot_tlv_estimate 144)
+    elseif(CONFIG_BOOT_SIGNATURE_TYPE_ML_DSA)
+      set(boot_tlv_estimate 4712)
     else()
       set(boot_tlv_estimate 40)
     endif()

@@ -64,7 +64,8 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #if (defined(MCUBOOT_SIGN_RSA)      + \
      defined(MCUBOOT_SIGN_EC256)    + \
      defined(MCUBOOT_SIGN_EC384)    + \
-     defined(MCUBOOT_SIGN_ED25519)) > 1
+     defined(MCUBOOT_SIGN_ED25519)  + \
+     defined(MCUBOOT_SIGN_ML_DSA87)) > 1
 #error "Only a single signature type is supported!"
 #endif
 
@@ -84,6 +85,10 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ECDSA_SIG
 #    define SIG_BUF_SIZE 128
 #    define EXPECTED_SIG_LEN(x) (1) /* always true, ASN.1 will validate */
+#elif defined(MCUBOOT_SIGN_ML_DSA87)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA87_SIG
+#    define SIG_BUF_SIZE 4627  /* ML-DSA-87 signature size per FIPS 204 */
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
 #elif defined(MCUBOOT_SIGN_ED25519)
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ED25519
 #    define SIG_BUF_SIZE 64
@@ -177,6 +182,7 @@ static const uint16_t allowed_unprot_tlvs[] = {
      IMAGE_TLV_ECDSA_SIG,
      IMAGE_TLV_RSA3072_PSS,
      IMAGE_TLV_ED25519,
+     IMAGE_TLV_MLDSA87_SIG,
 #if defined(MCUBOOT_SIGN_PURE)
      IMAGE_TLV_SIG_PURE,
 #endif
