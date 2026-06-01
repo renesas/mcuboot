@@ -43,7 +43,7 @@ from intelhex import IntelHex
 from . import keys
 from . import version as versmod
 from .boot_record import create_sw_component_data
-from .keys import ecdsa, rsa, x25519
+from .keys import ecdsa, rsa, x25519, mldsa87
 
 IMAGE_MAGIC = 0x96f3b83d
 IMAGE_HEADER_SIZE = 32
@@ -78,7 +78,8 @@ TLV_VALUES = {
         'ECDSASIG': 0x22,
         'RSA3072': 0x23,
         'ED25519': 0x24,
-        'SIG_PURE': 0x25,
+        'MLDSA87': 0x27,
+        'SIG_PURE': 0x28,
         'ENCRSA2048': 0x30,
         'ENCKW': 0x31,
         'ENCEC256': 0x32,
@@ -199,11 +200,14 @@ ALLOWED_KEY_SHA = {
 }
 
 ALLOWED_PURE_KEY_SHA = {
-    keys.Ed25519            : ['512']
+    keys.Ed25519            : ['512'],
+    keys.Mldsa87            : ['256'],
+    keys.Mldsa87Public      : ['256'],
 }
 
 ALLOWED_PURE_SIG_TLVS = [
-    TLV_VALUES['ED25519']
+    TLV_VALUES['ED25519'],
+    TLV_VALUES['MLDSA87'],
 ]
 
 def key_and_user_sha_to_alg_and_tlv(key, user_sha, is_pure = False):

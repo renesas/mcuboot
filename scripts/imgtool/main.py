@@ -32,7 +32,7 @@ from imgtool import image, imgtool_version
 from imgtool.dumpinfo import dump_imginfo
 from imgtool.version import decode_version
 
-from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError
+from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError, Mldsa87UsageError
 
 comp_default_dictsize=131072
 comp_default_pb=2
@@ -70,6 +70,8 @@ def gen_ed25519(keyfile, passwd):
 def gen_x25519(keyfile, passwd):
     keys.X25519.generate().export_private(path=keyfile, passwd=passwd)
 
+def gen_mldsa87(keyfile, passwd):
+    keys.Mldsa87.generate().export_private(path=keyfile, passwd=passwd)
 
 valid_langs = ['c', 'rust']
 valid_hash_encodings = ['lang-c', 'raw']
@@ -81,6 +83,7 @@ keygens = {
     'ecdsa-p384': gen_ecdsa_p384,
     'ed25519':    gen_ed25519,
     'x25519':     gen_x25519,
+    'mldsa-87':   gen_mldsa87,
 }
 valid_formats = ['openssl', 'pkcs8']
 valid_sha = [ 'auto', '256', '384', '512' ]
@@ -216,7 +219,7 @@ def getpriv(key, minimal, format):
         print("Invalid passphrase")
     try:
         key.emit_private(minimal, format)
-    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError) as e:
+    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError, Mldsa87UsageError) as e:
         raise click.UsageError(e) from e
 
 
@@ -538,6 +541,9 @@ def sign(key, public_key_format, align, version, pad_sig, header_size,
         baked_signature = {
             'value': raw_signature
         }
+
+    if key is not None and isinstance(key, keys.Mldsa87):
+        is_pure = True
 
     if is_pure and user_sha != 'auto':
         raise click.UsageError(

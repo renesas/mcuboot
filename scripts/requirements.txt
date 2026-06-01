@@ -5,3 +5,4 @@ cbor2
 setuptools
 pyyaml
 pytest
+dilithium-py>=1.3.0

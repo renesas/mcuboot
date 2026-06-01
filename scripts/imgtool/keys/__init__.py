@@ -34,6 +34,7 @@ from .ed25519 import Ed25519, Ed25519Public, Ed25519UsageError
 from .general import DigestSigner, PayloadSigner
 from .rsa import RSA, RSA_KEY_SIZES, RSAPublic, RSAUsageError
 from .x25519 import X25519, X25519Public, X25519UsageError
+from .mldsa87 import Mldsa87, Mldsa87Public, Mldsa87UsageError, load_mldsa87_pem
 
 __all__ = [
     "DigestSigner",
@@ -45,6 +46,9 @@ __all__ = [
     "Ed25519",
     "Ed25519Public",
     "Ed25519UsageError",
+    "Mldsa87",
+    "Mldsa87Public",
+    "Mldsa87UsageError",
     "PayloadSigner",
     "RSA",
     "RSA_KEY_SIZES",
@@ -81,9 +85,15 @@ def load(path, passwd=None):
     except ValueError:
         # This seems to happen if the key is a public key, let's try
         # loading it as a public key.
-        pk = serialization.load_pem_public_key(
-                raw_pem,
-                backend=default_backend())
+        try:
+            pk = serialization.load_pem_public_key(
+                    raw_pem,
+                    backend=default_backend())
+        except ValueError:
+            # ML-DSA-87: PKCS#8 PEM with OID 2.16.840.1.101.3.4.3.19
+            text = raw_pem.decode('ascii', errors='ignore')
+            if '-----BEGIN PRIVATE KEY-----' in text:
+                return load_mldsa87_pem(text)
 
     if isinstance(pk, RSAPrivateKey):
         if pk.key_size not in RSA_KEY_SIZES:
@@ -121,3 +131,5 @@ def load(path, passwd=None):
         return X25519Public(pk)
     else:
         raise Exception("Unknown key type: " + str(type(pk)))
+
+
