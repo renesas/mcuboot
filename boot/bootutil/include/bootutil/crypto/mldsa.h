@@ -33,6 +33,7 @@
 #endif
 
 #include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 #include <mbedtls/mldsa.h>
 
 /* Universal defines */
@@ -54,12 +55,19 @@ extern "C" {
 
 typedef mbedtls_mldsa_context bootutil_mldsa_context;
 static mbedtls_ctr_drbg_context drbg_ctx;
+static mbedtls_entropy_context entropy_ctx;
+static int drbg_seeded = 0;
 
 static inline void bootutil_mldsa_init(bootutil_mldsa_context *ctx)
 {
     mbedtls_mldsa_init(ctx);
 
-    mbedtls_ctr_drbg_init(&drbg_ctx);
+    if (!drbg_seeded) {
+        mbedtls_entropy_init(&entropy_ctx);
+        mbedtls_ctr_drbg_init(&drbg_ctx);
+        mbedtls_ctr_drbg_seed(&drbg_ctx, mbedtls_entropy_func, &entropy_ctx, NULL, 0);
+        drbg_seeded = 1;
+    }
 }
 
 static inline void bootutil_mldsa_drop(bootutil_mldsa_context *ctx)
