@@ -711,6 +711,7 @@ boot_enc_decrypt(struct enc_key_data *enc, uint32_t off,
 
     assert(enc->valid == 1);
     bootutil_aes_ctr_decrypt(&enc->aes_ctr, nonce, buf, sz, blk_off, buf);
+    bootutil_aes_ctr_finish(&enc->aes_ctr);
 }
 
 /**
