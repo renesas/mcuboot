@@ -32,8 +32,9 @@
     #error "One crypto backend must be defined: either MBED_TLS/PSA_CRYPTO"
 #endif
 
+#include <mbedtls/ctr_drbg.h>
+#include <mbedtls/entropy.h>
 #include <mbedtls/mldsa.h>
-#include "entropy_poll.h"
 
 /* Universal defines */
 
@@ -53,10 +54,20 @@ extern "C" {
 #endif
 
 typedef mbedtls_mldsa_context bootutil_mldsa_context;
+static mbedtls_ctr_drbg_context drbg_ctx;
+static mbedtls_entropy_context entropy_ctx;
+static int drbg_seeded = 0;
 
 static inline void bootutil_mldsa_init(bootutil_mldsa_context *ctx)
 {
     mbedtls_mldsa_init(ctx);
+
+    if (!drbg_seeded) {
+        mbedtls_entropy_init(&entropy_ctx);
+        mbedtls_ctr_drbg_init(&drbg_ctx);
+        mbedtls_ctr_drbg_seed(&drbg_ctx, mbedtls_entropy_func, &entropy_ctx, NULL, 0);
+        drbg_seeded = 1;
+    }
 }
 
 static inline void bootutil_mldsa_drop(bootutil_mldsa_context *ctx)
@@ -77,19 +88,18 @@ static int bootutil_mldsa_parse_public_key(bootutil_mldsa_context *ctx, uint8_t 
 
 static uint32_t mbedtls_mldsa_get_random(const uint32_t rand_len, uint32_t * const p_random)
 {
-    size_t olen = 0;
-
     if (rand_len == 0 || p_random == NULL) {
         /* This is the expected failure value for PQC internally */
         return 0xAAAAAAAAU;
     }
 
-    if (mbedtls_hardware_poll(NULL, (unsigned char *)p_random, (size_t)rand_len, &olen) != 0) {
-        return 0xAAAAAAAAU;
-    }
-
-    if (olen < (size_t)rand_len) {
-        return 0xAAAAAAAAU;
+    // Generate random data
+    for (uint32_t i = 0; i < (rand_len / 4); i++) {
+        uint8_t *p_byte = (uint8_t*)&p_random[i];
+        if (mbedtls_ctr_drbg_random(&drbg_ctx, p_byte, 4) != 0) {
+            /* This is the expected failure value for PQC internally */
+            return 0xAAAAAAAAU;
+        }
     }
 
     /* This is the expected success value for PQC internally */
