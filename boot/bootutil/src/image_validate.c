@@ -264,10 +264,10 @@ bootutil_img_validate(struct boot_loader_state *state,
 #endif
 #endif /* EXPECTED_SIG_TLV */
     struct image_tlv_iter it;
-    uint8_t buf[SIG_BUF_SIZE];
+    uint8_t buf[SIG_BUF_SIZE] __attribute__((aligned(4)));
 #if defined(EXPECTED_HASH_TLV) && !defined(MCUBOOT_SIGN_PURE)
     int image_hash_valid = 0;
-    uint8_t hash[IMAGE_HASH_SIZE];
+    uint8_t hash[IMAGE_HASH_SIZE] __attribute__((aligned(4)));
 #endif
     int rc = 0;
     FIH_DECLARE(fih_rc, FIH_FAILURE);
