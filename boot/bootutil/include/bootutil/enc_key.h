@@ -34,6 +34,7 @@
 #include "bootutil/image.h"
 #include "bootutil/sign_key.h"
 #include "bootutil/enc_key_public.h"
+#include "bootutil/bootutil.h"
 
 #ifdef __cplusplus
 extern "C" {

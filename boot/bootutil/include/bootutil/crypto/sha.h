@@ -30,8 +30,10 @@
 
 #if (defined(MCUBOOT_USE_PSA_OR_MBED_TLS) + \
      defined(MCUBOOT_USE_TINYCRYPT) + \
-     defined(MCUBOOT_USE_CC310)) != 1
-    #error "One crypto backend must be defined: either CC310/MBED_TLS/TINYCRYPT/PSA_CRYPTO"
+     defined(MCUBOOT_USE_CC310) + \
+     defined(MCUBOOT_USE_OCRYPTO) + \
+     defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)) != 1
+    #error "One crypto backend must be defined: either CC310/MBED_TLS/TINYCRYPT/PSA_CRYPTO/OCRYPTO/User defined implementation"
 #endif
 
 #if defined(MCUBOOT_SHA512)
@@ -55,7 +57,7 @@
 
 #elif defined(MCUBOOT_USE_MBED_TLS)
 
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512) || defined(MCUBOOT_SIGN_EC384)
 #include <mbedtls/sha512.h>
 #else
 #include <mbedtls/sha256.h>
@@ -77,6 +79,10 @@
 #if defined(MCUBOOT_USE_CC310)
     #include <cc310_glue.h>
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+    #include "ocrypto_sha256.h"
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #include <stdint.h>
 
@@ -129,7 +135,7 @@ static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
 
 #elif defined(MCUBOOT_USE_MBED_TLS)
 
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512) || defined(MCUBOOT_SIGN_EC384)
 typedef mbedtls_sha512_context bootutil_sha_context;
 #else
 typedef mbedtls_sha256_context bootutil_sha_context;
@@ -139,9 +145,13 @@ static inline int bootutil_sha_init(bootutil_sha_context *ctx)
 {
     int ret;
 
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512)
     mbedtls_sha512_init(ctx);
     ret = mbedtls_sha512_starts(ctx, 0);
+#elif defined(MCUBOOT_SIGN_EC384)
+    mbedtls_sha512_init(ctx);
+    /* true passed in here is to selected SHA384 instead of SHA512 */
+    ret = mbedtls_sha512_starts(ctx, true);
 #else
     mbedtls_sha256_init(ctx);
     ret = mbedtls_sha256_starts(ctx, 0);
@@ -152,7 +162,7 @@ static inline int bootutil_sha_init(bootutil_sha_context *ctx)
 
 static inline int bootutil_sha_drop(bootutil_sha_context *ctx)
 {
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512) || defined(MCUBOOT_SIGN_EC384)
     mbedtls_sha512_free(ctx);
 #else
     mbedtls_sha256_free(ctx);
@@ -167,7 +177,7 @@ static inline int bootutil_sha_update(bootutil_sha_context *ctx,
 {
     int ret;
 
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512) || defined(MCUBOOT_SIGN_EC384)
     ret = mbedtls_sha512_update(ctx, data, data_len);
 #else
     ret = mbedtls_sha256_update(ctx, data, data_len);
@@ -181,7 +191,7 @@ static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
 {
     int ret;
 
-#ifdef MCUBOOT_SHA512
+#if defined(MCUBOOT_SHA512) || defined(MCUBOOT_SIGN_EC384)
     ret = mbedtls_sha512_finish(ctx, output);
 #else
     ret = mbedtls_sha256_finish(ctx, output);
@@ -266,6 +276,37 @@ static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
     return 0;
 }
 #endif /* MCUBOOT_USE_CC310 */
+
+#if defined(MCUBOOT_USE_OCRYPTO)
+typedef ocrypto_sha256_ctx bootutil_sha_context;
+
+static inline int bootutil_sha_init(bootutil_sha_context *ctx)
+{
+    ocrypto_sha256_init(ctx);
+    return 0;
+}
+
+static inline int bootutil_sha_drop(bootutil_sha_context *ctx)
+{
+    (void)ctx;
+    return 0;
+}
+
+static inline int bootutil_sha_update(bootutil_sha_context *ctx,
+                                      const void *data,
+                                      uint32_t data_len)
+{
+    ocrypto_sha256_update(ctx, data, data_len);
+    return 0;
+}
+
+static inline int bootutil_sha_finish(bootutil_sha_context *ctx,
+                                      uint8_t *output)
+{
+    ocrypto_sha256_final(ctx, output);
+    return 0;
+}
+#endif /* MCUBOOT_USE_OCRYPTO */
 
 #ifdef __cplusplus
 }

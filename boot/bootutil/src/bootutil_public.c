@@ -68,8 +68,8 @@ const union boot_img_magic_t boot_img_magic = {
 };
 #else
 const union boot_img_magic_t boot_img_magic = {
-    .align = BOOT_MAX_ALIGN,
-    .magic = {
+    .val_s.align = BOOT_MAX_ALIGN,
+    .val_s.magic = {
         0x2d, 0xe1,
         0x5d, 0x29, 0x41, 0x0b,
         0x8d, 0x77, 0x67, 0x9c,

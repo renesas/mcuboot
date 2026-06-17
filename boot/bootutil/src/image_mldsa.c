@@ -28,76 +28,43 @@
 #include <string.h>
 
 #include "mcuboot_config/mcuboot_config.h"
-#include "bootutil/bootutil_log.h"
 
-BOOT_LOG_MODULE_DECLARE(mcuboot);
-
-#if defined(MCUBOOT_SIGN_EC256) || defined(MCUBOOT_SIGN_EC384)
+#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87)
 #if !defined(MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK)
 #include "bootutil_priv.h"
 #include "bootutil/fault_injection_hardening.h"
-#include "bootutil/crypto/ecdsa.h"
+#include "bootutil/crypto/mldsa.h"
 
-#if !defined(MCUBOOT_BUILTIN_KEY)
 fih_ret
 bootutil_verify_sig(uint8_t *hash, uint32_t hlen, uint8_t *sig, size_t slen,
                     uint8_t key_id)
 {
     int rc;
-    bootutil_ecdsa_context ctx;
+    bootutil_mldsa_context ctx;
     FIH_DECLARE(fih_rc, FIH_FAILURE);
     uint8_t *pubkey;
     uint8_t *end;
 
-    BOOT_LOG_DBG("bootutil_verify_sig: ECDSA builtin key %d", key_id);
-
     pubkey = (uint8_t *)bootutil_keys[key_id].key;
     end = pubkey + *bootutil_keys[key_id].len;
-    bootutil_ecdsa_init(&ctx);
+    bootutil_mldsa_init(&ctx);
 
-    rc = bootutil_ecdsa_parse_public_key(&ctx, &pubkey, end);
+    rc = bootutil_mldsa_parse_public_key(&ctx, &pubkey, end);
     if (rc) {
         goto out;
     }
 
-    rc = bootutil_ecdsa_verify(&ctx, pubkey, end-pubkey, hash, hlen, sig, slen);
+    rc = bootutil_mldsa_verify(&ctx, pubkey, end-pubkey, hash, hlen, sig, slen);
     fih_rc = fih_ret_encode_zero_equality(rc);
     if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
         FIH_SET(fih_rc, FIH_FAILURE);
     }
 
 out:
-    bootutil_ecdsa_drop(&ctx);
+    bootutil_mldsa_drop(&ctx);
 
     FIH_RET(fih_rc);
 }
-#else /* !MCUBOOT_BUILTIN_KEY */
-fih_ret
-bootutil_verify_sig(uint8_t *hash, uint32_t hlen, uint8_t *sig, size_t slen,
-                    uint8_t key_id)
-{
-    int rc;
-    bootutil_ecdsa_context ctx;
-    FIH_DECLARE(fih_rc, FIH_FAILURE);
-
-    BOOT_LOG_DBG("bootutil_verify_sig: ECDSA embedded key %hhd", key_id);
-
-    /* Use builtin key for image verification, no key parsing is required. */
-    ctx.key_id = key_id;
-    bootutil_ecdsa_init(&ctx);
-
-    /* The public key pointer and key size can be omitted. */
-    rc = bootutil_ecdsa_verify(&ctx, NULL, 0, hash, hlen, sig, slen);
-    fih_rc = fih_ret_encode_zero_equality(rc);
-    if (FIH_NOT_EQ(fih_rc, FIH_SUCCESS)) {
-        FIH_SET(fih_rc, FIH_FAILURE);
-    }
-
-    bootutil_ecdsa_drop(&ctx);
-
-    FIH_RET(fih_rc);
-}
-#endif /* MCUBOOT_BUILTIN_KEY */
 
 #endif /* !MCUBOOT_USE_USER_DEFINED_CRYPTO_STACK */
-#endif /* MCUBOOT_SIGN_EC256 || MCUBOOT_SIGN_EC384 */
+#endif /* defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87) */

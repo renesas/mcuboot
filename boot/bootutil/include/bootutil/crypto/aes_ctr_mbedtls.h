@@ -51,6 +51,10 @@ static inline int bootutil_aes_ctr_decrypt(bootutil_aes_ctr_context *ctx, uint8_
     return mbedtls_aes_crypt_ctr(ctx, clen, &blk_off, counter, stream_block, c, m);
 }
 
+static inline int bootutil_aes_ctr_finish(bootutil_aes_ctr_context *ctx)
+{
+    return mbedtls_internal_aes_crypt_ctr_finish(ctx);
+}
 #ifdef __cplusplus
 }
 #endif

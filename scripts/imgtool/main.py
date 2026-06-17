@@ -32,7 +32,8 @@ from imgtool import image, imgtool_version
 from imgtool.dumpinfo import dump_imginfo
 from imgtool.version import decode_version
 
-from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError
+from .keys import ECDSAUsageError, Ed25519UsageError, RSAUsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError, Mldsa87UsageError
+
 
 comp_default_dictsize=131072
 comp_default_pb=2
@@ -70,6 +71,14 @@ def gen_ed25519(keyfile, passwd):
 def gen_x25519(keyfile, passwd):
     keys.X25519.generate().export_private(path=keyfile, passwd=passwd)
 
+def gen_mldsa44(keyfile, passwd):
+    keys.Mldsa44.generate().export_private(path=keyfile, passwd=passwd)
+
+def gen_mldsa65(keyfile, passwd):
+    keys.Mldsa65.generate().export_private(path=keyfile, passwd=passwd)
+
+def gen_mldsa87(keyfile, passwd):
+    keys.Mldsa87.generate().export_private(path=keyfile, passwd=passwd)
 
 valid_langs = ['c', 'rust']
 valid_hash_encodings = ['lang-c', 'raw']
@@ -81,6 +90,9 @@ keygens = {
     'ecdsa-p384': gen_ecdsa_p384,
     'ed25519':    gen_ed25519,
     'x25519':     gen_x25519,
+    'mldsa-44':   gen_mldsa44,
+    'mldsa-65':   gen_mldsa65,
+    'mldsa-87':   gen_mldsa87,
 }
 valid_formats = ['openssl', 'pkcs8']
 valid_sha = [ 'auto', '256', '384', '512' ]
@@ -216,7 +228,7 @@ def getpriv(key, minimal, format):
         print("Invalid passphrase")
     try:
         key.emit_private(minimal, format)
-    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError) as e:
+    except (RSAUsageError, ECDSAUsageError, Ed25519UsageError, X25519UsageError, Mldsa44UsageError, Mldsa65UsageError, Mldsa87UsageError) as e:
         raise click.UsageError(e) from e
 
 
@@ -417,11 +429,13 @@ class BasedIntParamType(click.ParamType):
               help='Specify the value of security counter. Use the `auto` '
               'keyword to automatically generate it from the image version.')
 @click.option('-v', '--version', callback=validate_version,  required=True)
-@click.option('--align', type=click.Choice(['1', '2', '4', '8', '16', '32']),
+@click.option('--align', type=click.Choice(['1', '2', '4', '8', '16', '32',
+              '64', '128', '256', '512', '1024', '2048', '4096']),
               default='1',
               required=False,
               help='Alignment used by swap update modes.')
-@click.option('--max-align', type=click.Choice(['8', '16', '32']),
+@click.option('--max-align', type=click.Choice(['1', '2', '4', '8', '16', '32',
+              '64', '128', '256', '512', '1024', '2048', '4096']),
               required=False,
               help='Maximum flash alignment. Set if flash alignment of the '
               'primary and secondary slot differ and any of them is larger '

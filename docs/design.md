@@ -673,7 +673,7 @@ union boot_img_magic_t
     struct {
         uint16_t align;
         uint8_t magic[14];
-    };
+    }val_s;
     uint8_t val[16];
 };
 ```
@@ -696,8 +696,8 @@ const union boot_img_magic_t boot_img_magic = {
 
 ``` c
 const union boot_img_magic_t boot_img_magic = {
-    .align = BOOT_MAX_ALIGN,
-    .magic = {
+    .val_s.align = BOOT_MAX_ALIGN,
+    .val_s.magic = {
         0x2d, 0xe1,
         0x5d, 0x29, 0x41, 0x0b,
         0x8d, 0x77, 0x67, 0x9c,

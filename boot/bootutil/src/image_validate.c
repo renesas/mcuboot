@@ -53,6 +53,23 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #ifdef MCUBOOT_ENC_IMAGES
 #include "bootutil/enc_key.h"
 #endif
+
+#if defined(MCUBOOT_USE_MBED_TLS)
+#if defined(MCUBOOT_SIGN_RSA)
+#include "mbedtls/rsa.h"
+#endif
+#if defined(MCUBOOT_SIGN_EC256)
+#include "mbedtls/ecdsa.h"
+#endif
+#if defined(MCUBOOT_SIGN_ML_DSA44) || defined(MCUBOOT_SIGN_ML_DSA65) || defined(MCUBOOT_SIGN_ML_DSA87)
+#include "mbedtls/mldsa.h"
+#endif
+#if defined(MCUBOOT_ENC_IMAGES) || defined(MCUBOOT_SIGN_RSA) || \
+    defined(MCUBOOT_SIGN_EC256)
+#include "mbedtls/asn1.h"
+#endif
+#endif /* MCUBOOT_USE_MBED_TLS */
+
 #include "bootutil_priv.h"
 
 /*
@@ -64,7 +81,10 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #if (defined(MCUBOOT_SIGN_RSA)      + \
      defined(MCUBOOT_SIGN_EC256)    + \
      defined(MCUBOOT_SIGN_EC384)    + \
-     defined(MCUBOOT_SIGN_ED25519)) > 1
+     defined(MCUBOOT_SIGN_ED25519)  + \
+     defined(MCUBOOT_SIGN_ML_DSA44) + \
+     defined(MCUBOOT_SIGN_ML_DSA65) + \
+     defined(MCUBOOT_SIGN_ML_DSA87)) > 1
 #error "Only a single signature type is supported!"
 #endif
 
@@ -84,6 +104,18 @@ BOOT_LOG_MODULE_DECLARE(mcuboot);
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ECDSA_SIG
 #    define SIG_BUF_SIZE 128
 #    define EXPECTED_SIG_LEN(x) (1) /* always true, ASN.1 will validate */
+#elif defined(MCUBOOT_SIGN_ML_DSA44)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA44_SIG
+#    define SIG_BUF_SIZE 2420
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
+#elif defined(MCUBOOT_SIGN_ML_DSA65)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA65_SIG
+#    define SIG_BUF_SIZE 3309
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
+#elif defined(MCUBOOT_SIGN_ML_DSA87)
+#    define EXPECTED_SIG_TLV IMAGE_TLV_MLDSA87_SIG
+#    define SIG_BUF_SIZE 4627
+#    define EXPECTED_SIG_LEN(x) ((x) == SIG_BUF_SIZE)
 #elif defined(MCUBOOT_SIGN_ED25519)
 #    define EXPECTED_SIG_TLV IMAGE_TLV_ED25519
 #    define SIG_BUF_SIZE 64
@@ -180,6 +212,9 @@ static const uint16_t allowed_unprot_tlvs[] = {
 #if defined(MCUBOOT_SIGN_PURE)
      IMAGE_TLV_SIG_PURE,
 #endif
+     IMAGE_TLV_MLDSA44_SIG,
+     IMAGE_TLV_MLDSA65_SIG,
+     IMAGE_TLV_MLDSA87_SIG,
      IMAGE_TLV_ENC_RSA2048,
      IMAGE_TLV_ENC_KW,
      IMAGE_TLV_ENC_EC256,
@@ -229,10 +264,10 @@ bootutil_img_validate(struct boot_loader_state *state,
 #endif
 #endif /* EXPECTED_SIG_TLV */
     struct image_tlv_iter it;
-    uint8_t buf[SIG_BUF_SIZE];
+    uint8_t buf[SIG_BUF_SIZE] __attribute__((aligned(4)));
 #if defined(EXPECTED_HASH_TLV) && !defined(MCUBOOT_SIGN_PURE)
     int image_hash_valid = 0;
-    uint8_t hash[IMAGE_HASH_SIZE];
+    uint8_t hash[IMAGE_HASH_SIZE] __attribute__((aligned(4)));
 #endif
     int rc = 0;
     FIH_DECLARE(fih_rc, FIH_FAILURE);

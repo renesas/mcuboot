@@ -79,6 +79,9 @@ TLV_VALUES = {
         'RSA3072': 0x23,
         'ED25519': 0x24,
         'SIG_PURE': 0x25,
+        'MLDSA44': 0x26,
+        'MLDSA65': 0x27,
+        'MLDSA87': 0x28,
         'ENCRSA2048': 0x30,
         'ENCKW': 0x31,
         'ENCEC256': 0x32,
@@ -195,6 +198,9 @@ ALLOWED_KEY_SHA = {
     # This two are set to 256 for compatibility, the right would be 512
     keys.Ed25519            : ['256', '512'],
     keys.Ed25519Public      : ['256', '512'],
+    keys.Mldsa44            : ['256', '512'],
+    keys.Mldsa65            : ['256', '512'],
+    keys.Mldsa87            : ['256', '512'],
     keys.X25519             : ['256', '512']
 }
 
@@ -861,7 +867,7 @@ class Image:
         if overwrite_only:
             return self.max_align * 2 + magic_align_size
         else:
-            if write_size not in set([1, 2, 4, 8, 16, 32]):
+            if write_size not in set([1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]):
                 raise click.BadParameter(f"Invalid alignment: {write_size}")
             m = DEFAULT_MAX_SECTORS if max_sectors is None else max_sectors
             trailer = m * 3 * write_size  # status area
