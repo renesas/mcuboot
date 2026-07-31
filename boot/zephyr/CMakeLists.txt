@@ -57,10 +57,23 @@ endif()
 zephyr_include_directories(include)
 
 if(DEFINED CONFIG_MBEDTLS)
-  zephyr_include_directories(
-    ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
-    ${ZEPHYR_MBEDTLS_MODULE_DIR}/library
-  )
+  if(CONFIG_MBEDTLS_CUSTOM)
+    # CONFIG_MBEDTLS_CUSTOM currently always means the Renesas mbedtls-renesas
+    # fork (see modules/crypto/psa-crypto-driver, which uses the same
+    # ZEPHYR_MBEDTLS_RENESAS_MODULE_DIR). ZEPHYR_MBEDTLS_MODULE_DIR always
+    # points at the west module literally named "mbedtls" (the real upstream
+    # 4.x sources used by MBEDTLS_BUILTIN), regardless of which
+    # implementation is selected.
+    zephyr_library_include_directories(
+      ${ZEPHYR_MBEDTLS_RENESAS_MODULE_DIR}/include
+      ${ZEPHYR_MBEDTLS_RENESAS_MODULE_DIR}/library
+    )
+  else()
+    zephyr_library_include_directories(
+      ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+      ${ZEPHYR_MBEDTLS_MODULE_DIR}/library
+    )
+  endif()
 endif()
 
 # Zephyr port-specific sources.
@@ -216,10 +229,16 @@ elseif(CONFIG_BOOT_SIGNATURE_TYPE_RSA)
   # Use mbedTLS provided by Zephyr for RSA signatures. (Its config file
   # is set using Kconfig.)
   if(CONFIG_BOOT_ENCRYPT_RSA)
-    set_source_files_properties(${BOOT_DIR}/bootutil/src/encrypted.c
+    if(CONFIG_MBEDTLS_CUSTOM)
+      set(ENCRYPTED_C_MBEDTLS_LIBRARY_DIR ${ZEPHYR_MBEDTLS_RENESAS_MODULE_DIR}/library)
+    else()
+      set(ENCRYPTED_C_MBEDTLS_LIBRARY_DIR ${ZEPHYR_MBEDTLS_MODULE_DIR}/library)
+    endif()
+    set_source_files_properties(
+      ${BOOT_DIR}/bootutil/src/encrypted.c
       PROPERTIES
-        INCLUDE_DIRECTORIES ${ZEPHYR_MBEDTLS_MODULE_DIR}/library
-    )
+      INCLUDE_DIRECTORIES ${ENCRYPTED_C_MBEDTLS_LIBRARY_DIR}
+      )
   endif()
 elseif(CONFIG_BOOT_SIGNATURE_TYPE_ED25519 OR CONFIG_BOOT_ENCRYPT_X25519)
   if(CONFIG_BOOT_USE_TINYCRYPT)
