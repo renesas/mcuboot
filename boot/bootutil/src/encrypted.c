@@ -418,10 +418,13 @@ boot_decrypt_key(const uint8_t *buf, uint8_t *enckey)
 #if defined(MCUBOOT_ENCRYPT_RSA)
     bootutil_rsa_init(&pk_ctx);
 
+    BOOT_LOG_ERR("boot_decrypt_key: enc key material len=%d, first bytes: %02x %02x %02x %02x",
+                 (int)(cpend - cp), cp[0], cp[1], cp[2], cp[3]);
+
     /* The enckey is encrypted through RSA so for decryption we need the private key */
     rc = bootutil_rsa_parse_private_key(&pk_ctx, &cp, cpend);
     if (rc) {
-        BOOT_LOG_ERR("boot_decrypt_key: bootutil_rsa_parse_private_key failed, rc=%d", rc);
+        BOOT_LOG_ERR("boot_decrypt_key: bootutil_rsa_parse_private_key failed, rc=%d (0x%x)", rc, (unsigned)rc);
         bootutil_rsa_drop(&pk_ctx);
         return rc;
     }
