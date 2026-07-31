@@ -401,10 +401,12 @@ boot_decrypt_key(const uint8_t *buf, uint8_t *enckey)
 
     rc = boot_enc_retrieve_private_key(&bootutil_enc_key);
     if (rc) {
+        BOOT_LOG_ERR("boot_decrypt_key: boot_enc_retrieve_private_key failed, rc=%d", rc);
         return rc;
     }
 
     if (bootutil_enc_key == NULL) {
+        BOOT_LOG_ERR("boot_decrypt_key: bootutil_enc_key is NULL");
         return rc;
     }
 
@@ -419,11 +421,15 @@ boot_decrypt_key(const uint8_t *buf, uint8_t *enckey)
     /* The enckey is encrypted through RSA so for decryption we need the private key */
     rc = bootutil_rsa_parse_private_key(&pk_ctx, &cp, cpend);
     if (rc) {
+        BOOT_LOG_ERR("boot_decrypt_key: bootutil_rsa_parse_private_key failed, rc=%d", rc);
         bootutil_rsa_drop(&pk_ctx);
         return rc;
     }
 
     rc = bootutil_rsa_oaep_decrypt(&pk_ctx, &len, buf, enckey, BOOT_ENC_KEY_SIZE);
+    if (rc) {
+        BOOT_LOG_ERR("boot_decrypt_key: bootutil_rsa_oaep_decrypt failed, rc=%d", rc);
+    }
     bootutil_rsa_drop(&pk_ctx);
     if (rc) {
         return rc;
