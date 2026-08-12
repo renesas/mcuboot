@@ -5,15 +5,32 @@ MLDSA44 key management using FIPS 204 specification
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from dilithium_py.ml_dsa import ML_DSA_44
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from .general import KeyClass
 
+# dilithium-py is an optional dependency: it is only needed to actually
+# generate, sign or verify with ML-DSA keys. Unconditional import would make
+# imgtool unusable for RSA/ECDSA/Ed25519 users who have not installed it.
+try:
+    from dilithium_py.ml_dsa import ML_DSA_44
+except ImportError:
+    ML_DSA_44 = None
+
 
 class Mldsa44UsageError(Exception):
     pass
+
+
+def _ml_dsa_44():
+    """Return the ML-DSA-44 implementation, or explain how to install it."""
+    if ML_DSA_44 is None:
+        raise Mldsa44UsageError(
+            "ML-DSA-44 support requires the 'dilithium-py' package. "
+            "Install it with 'pip install dilithium-py' (see "
+            "scripts/requirements.txt), or use a non-ML-DSA key type.")
+    return ML_DSA_44
 
 
 class Mldsa44Public(KeyClass):
@@ -63,9 +80,10 @@ class Mldsa44Public(KeyClass):
 
     def verify_digest(self, signature, digest):
         """Verify that signature is valid for given digest using FIPS 204 ML-DSA"""
+        ml_dsa = _ml_dsa_44()
         try:
             # Use FIPS 204 ML-DSA-44 for verification
-            return ML_DSA_44.verify(self.public_key_bytes, digest, signature)
+            return ml_dsa.verify(self.public_key_bytes, digest, signature)
         except Exception:
             return False
 
@@ -94,7 +112,7 @@ class Mldsa44(Mldsa44Public):
         seed = os.urandom(32)
 
         # Use FIPS 204 ML-DSA-44 for key generation
-        public_key, private_key = ML_DSA_44.key_derive(seed)
+        public_key, private_key = _ml_dsa_44().key_derive(seed)
         return Mldsa44(private_key, public_key)
 
     def _get_public(self):
@@ -131,7 +149,7 @@ class Mldsa44(Mldsa44Public):
     def sign_digest(self, digest):
         """Return the actual signature using FIPS 204 ML-DSA"""
         # Use FIPS 204 ML-DSA-44 for signing
-        signature = ML_DSA_44.sign(self.private_key_bytes, digest)
+        signature = _ml_dsa_44().sign(self.private_key_bytes, digest)
 
         return signature
 

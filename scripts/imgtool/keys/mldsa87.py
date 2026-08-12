@@ -5,15 +5,32 @@ MLDSA87 key management using FIPS 204 specification
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from dilithium_py.ml_dsa import ML_DSA_87
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from .general import KeyClass
 
+# dilithium-py is an optional dependency: it is only needed to actually
+# generate, sign or verify with ML-DSA keys. Unconditional import would make
+# imgtool unusable for RSA/ECDSA/Ed25519 users who have not installed it.
+try:
+    from dilithium_py.ml_dsa import ML_DSA_87
+except ImportError:
+    ML_DSA_87 = None
+
 
 class Mldsa87UsageError(Exception):
     pass
+
+
+def _ml_dsa_87():
+    """Return the ML-DSA-87 implementation, or explain how to install it."""
+    if ML_DSA_87 is None:
+        raise Mldsa87UsageError(
+            "ML-DSA-87 support requires the 'dilithium-py' package. "
+            "Install it with 'pip install dilithium-py' (see "
+            "scripts/requirements.txt), or use a non-ML-DSA key type.")
+    return ML_DSA_87
 
 
 class Mldsa87Public(KeyClass):
@@ -63,9 +80,10 @@ class Mldsa87Public(KeyClass):
 
     def verify_digest(self, signature, digest):
         """Verify that signature is valid for given digest using FIPS 204 ML-DSA"""
+        ml_dsa = _ml_dsa_87()
         try:
             # Use FIPS 204 ML-DSA-87 for verification
-            return ML_DSA_87.verify(self.public_key_bytes, digest, signature)
+            return ml_dsa.verify(self.public_key_bytes, digest, signature)
         except Exception:
             return False
 
@@ -93,7 +111,7 @@ class Mldsa87(Mldsa87Public):
     def generate():
         """Generate a new MLDSA87 key pair using FIPS 204 ML-DSA specification"""
         # Use FIPS 204 ML-DSA-87 for key generation
-        public_key, private_key = ML_DSA_87.keygen()
+        public_key, private_key = _ml_dsa_87().keygen()
 
         return Mldsa87(private_key, public_key)
 
@@ -131,7 +149,7 @@ class Mldsa87(Mldsa87Public):
     def sign_digest(self, digest):
         """Return the actual signature using FIPS 204 ML-DSA"""
         # Use FIPS 204 ML-DSA-87 for signing
-        signature = ML_DSA_87.sign(self.private_key_bytes, digest)
+        signature = _ml_dsa_87().sign(self.private_key_bytes, digest)
 
         return signature
 
