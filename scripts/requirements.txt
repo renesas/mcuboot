@@ -13,3 +13,5 @@ pytest
 # used.
 jinja2
 jsonschema
+
+dilithium-py>=1.3.0

@@ -32,6 +32,12 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 from .ecdsa import ECDSA256P1, ECDSA384P1, ECDSA256P1Public, ECDSA384P1Public, ECDSAUsageError
 from .ed25519 import Ed25519, Ed25519Public, Ed25519UsageError
 from .general import DigestSigner, PayloadSigner
+from .mldsa87 import (
+    Mldsa87,
+    Mldsa87Public,
+    Mldsa87UsageError,
+    load_mldsa87_pem,
+)
 from .rsa import RSA, RSA_KEY_SIZES, RSAPublic, RSAUsageError
 from .x25519 import X25519, X25519Public, X25519UsageError
 
@@ -45,6 +51,9 @@ __all__ = [
     "Ed25519",
     "Ed25519Public",
     "Ed25519UsageError",
+    "Mldsa87",
+    "Mldsa87Public",
+    "Mldsa87UsageError",
     "PayloadSigner",
     "RSA",
     "RSA_KEY_SIZES",
@@ -81,9 +90,15 @@ def load(path, passwd=None):
     except ValueError:
         # This seems to happen if the key is a public key, let's try
         # loading it as a public key.
-        pk = serialization.load_pem_public_key(
-                raw_pem,
-                backend=default_backend())
+        try:
+            pk = serialization.load_pem_public_key(
+                    raw_pem,
+                    backend=default_backend())
+        except ValueError:
+            # ML-DSA-87: PKCS#8 PEM with OID 2.16.840.1.101.3.4.3.19
+            text = raw_pem.decode('ascii', errors='ignore')
+            if '-----BEGIN PRIVATE KEY-----' in text:
+                return load_mldsa87_pem(text)
 
     if isinstance(pk, RSAPrivateKey):
         if pk.key_size not in RSA_KEY_SIZES:

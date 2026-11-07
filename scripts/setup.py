@@ -19,6 +19,7 @@ setuptools.setup(
         'click',
         'cbor2',
         'pyyaml',
+        'dilithium-py>=1.3.0',
     ],
     entry_points={
         "console_scripts": ["imgtool=imgtool.main:imgtool"]
