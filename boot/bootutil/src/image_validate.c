@@ -429,6 +429,24 @@ bootutil_img_validate(struct boot_loader_state *state,
                 goto out;
             }
 
+    /*
+     * Pure-signature verification accesses the complete image
+     * directly through memory mapping. Use the corresponding
+     * Non-Secure MRAM alias for each Non-Secure image because
+     * its physical Secure alias is not accessible.
+     */
+#if defined(CPU0_NS_ROM_ALIAS_BASE)
+            if (image_index == 1) {
+                base = CPU0_NS_ROM_ALIAS_BASE;
+            }
+#endif
+
+#if defined(CPU1_NS_ROM_ALIAS_BASE)
+            if (image_index == 2) {
+                base = CPU1_NS_ROM_ALIAS_BASE;
+            }
+#endif
+
 #if defined(MCUBOOT_SWAP_USING_OFFSET)
             base += boot_get_state_secondary_offset(state, fap);
 #endif
