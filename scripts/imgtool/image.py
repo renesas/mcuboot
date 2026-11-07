@@ -43,7 +43,7 @@ from intelhex import IntelHex
 from . import keys
 from . import version as versmod
 from .boot_record import create_sw_component_data
-from .keys import ecdsa, rsa, x25519
+from .keys import ecdsa, rsa, x25519, mldsa87
 
 IMAGE_MAGIC = 0x96f3b83d
 IMAGE_HEADER_SIZE = 32
@@ -79,6 +79,7 @@ TLV_VALUES = {
         'RSA3072': 0x23,
         'ED25519': 0x24,
         'SIG_PURE': 0x25,
+        'MLDSA87': 0x27,
         'ENCRSA2048': 0x30,
         'ENCKW': 0x31,
         'ENCEC256': 0x32,
@@ -199,37 +200,48 @@ ALLOWED_KEY_SHA = {
 }
 
 ALLOWED_PURE_KEY_SHA = {
-    keys.Ed25519            : ['512']
+    keys.Ed25519            : ['512'],
+    keys.Mldsa87            : ['256'],
+    keys.Mldsa87Public      : ['256'],
 }
 
 ALLOWED_PURE_SIG_TLVS = [
-    TLV_VALUES['ED25519']
+    TLV_VALUES['ED25519'],
+    TLV_VALUES['MLDSA87'],
 ]
 
-def key_and_user_sha_to_alg_and_tlv(key, user_sha, is_pure = False):
-    """Matches key and user requested sha to sha alogrithm and TLV name.
+def key_and_user_sha_to_alg_and_tlv(key, user_sha, is_pure=False):
+    """Match a key and requested SHA algorithm to hash algorithm and TLV name.
 
-       The returned tuple will contain hash functions and TVL name.
-       The function is designed to succeed or completely fail execution,
-       as providing incorrect pair here basically prevents doing
-       any more work.
+    The returned tuple contains the hash algorithm and TLV name.
+    The function either returns a valid combination or raises UsageError.
     """
     if key is None:
-        # If key is none, we allow whatever user has selected for sha
+        # If key is None, allow the user-selected SHA algorithm.
         return USER_SHA_TO_ALG_AND_TLV[user_sha]
 
-    # If key is not None, then we have to filter hash to only allowed
-    allowed = None
-    allowed_key_ssh = ALLOWED_PURE_KEY_SHA if is_pure else ALLOWED_KEY_SHA
-    try:
-        allowed = allowed_key_ssh[type(key)]
+    # ML-DSA-87 always uses Pure mode.
+    # This is required because mcuboot_imagesign_wrapper does not pass
+    # an explicit Pure-mode option.
+    if isinstance(key, (keys.Mldsa87, keys.Mldsa87Public)):
+        is_pure = True
 
+    # Filter the hash algorithms allowed for this key and signing mode.
+    allowed_key_sha = (
+        ALLOWED_PURE_KEY_SHA
+        if is_pure
+        else ALLOWED_KEY_SHA
+    )
+
+    try:
+        allowed = allowed_key_sha[type(key)]
     except KeyError:
         raise click.UsageError(
-            f"Could not find allowed hash algorithms for {type(key)}") from None
+            f"Could not find allowed hash algorithms for {type(key)}"
+        ) from None
 
-    # Pure enforces auto, and user selection is ignored
-    if user_sha == 'auto' or is_pure:
+    # Pure mode enforces the key's preferred hash selection.
+    if user_sha == "auto" or is_pure:
         return USER_SHA_TO_ALG_AND_TLV[allowed[0]]
 
     if user_sha in allowed:
@@ -237,7 +249,7 @@ def key_and_user_sha_to_alg_and_tlv(key, user_sha, is_pure = False):
 
     raise click.UsageError(
         f"Key {key.sig_type()} can not be used with --sha {user_sha}; "
-        "allowed sha are one of {allowed}"
+        f"allowed sha are one of {allowed}"
     ) from None
 
 
@@ -522,6 +534,12 @@ class Image:
 
         # key decides on sha, then pub_key; of both are none default is used
         check_key = key if key is not None else pub_key
+
+        # ML-DSA-87 always uses Pure mode.
+        # Image.create() must see this so SIG_PURE is added.
+        if isinstance(check_key, (keys.Mldsa87, keys.Mldsa87Public)):
+            is_pure = True
+
         hash_algorithm, hash_tlv = key_and_user_sha_to_alg_and_tlv(check_key, user_sha, is_pure)
 
         # Calculate the hash of the public key
